@@ -1,0 +1,39 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="../USS/AppStyles.uss" />
+
+    <ui:VisualElement name="screen-proyek" class="screen">
+
+        <ui:VisualElement class="top-bar">
+            <ui:Label name="btn-back" class="btn-back" />
+            <ui:Label text="Proyek" class="top-bar__title" />
+        </ui:VisualElement>
+
+        <!-- Search -->
+        <ui:VisualElement class="search-bar" style="margin-bottom: 16px;">
+            <ui:TextField name="search-input"
+                class="search-bar__input"
+                placeholder-text="Cari proyek..." />
+        </ui:VisualElement>
+
+        <ui:ScrollView name="scroll-main"
+            vertical-scrollbar-visibility="Hidden"
+            horizontal-scrollbar-visibility="Hidden"
+            style="flex: 1; padding-left: 16px; padding-right: 16px; --unity-scrollbar-width: 0px; ">
+
+            <!-- Empty state -->
+            <ui:VisualElement name="empty-state" class="empty-state">
+                <ui:Label text="Belum ada proyek"
+                    class="empty-state__text" />
+                <ui:Label text="Mulai sesi AR untuk membuat proyek baru"
+                    class="empty-state__text"
+                    style="margin-top: 4px;" />
+            </ui:VisualElement>
+
+            <!-- List proyek (diisi via script) -->
+            <ui:VisualElement name="proyek-list"
+                style="display: none;" />
+
+        </ui:ScrollView>
+
+    </ui:VisualElement>
+</ui:UXML>

@@ -1,0 +1,86 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="../USS/AppStyles.uss" />
+
+    <ui:VisualElement name="screen-dashboard" class="screen">
+
+        <!-- Header -->
+        <ui:VisualElement name="header"
+            style="padding-top: 130px;
+                                 padding-left: 24px;
+                                 padding-right: 24px;
+                                 padding-bottom: 16px;
+                                 flex-shrink: 0;">
+            <ui:Label text="Desain Interior" class="text-h1" />
+            <ui:Label
+                text="Desain ruangan anda menggunakan teknologi AR untuk pengalaman virtual yang nyata."
+                class="text-body"
+                style="margin-top: 4px;" />
+        </ui:VisualElement>
+
+        <!-- Hero Card AR -->
+        <ui:VisualElement name="card-hero" class="card-hero"
+            style="flex-shrink: 0; margin-bottom: 24px;">
+            <ui:VisualElement
+                style="width: 90px; height: 90px;
+                                     background-color: #FFC800;" />
+            <ui:VisualElement
+                style="flex-direction: column;
+                                     flex: 1;
+                                     margin-left: 16px;
+                                     margin-right: 16px;">
+                <ui:Label text="Start AR Room" class="text-h2" />
+                <ui:Label text="Coba AR pada ruanganmu"
+                    class="text-body"
+                    style="margin-top: 4px;" />
+            </ui:VisualElement>
+            <ui:VisualElement
+                style="width: 30px; height: 90px;
+                                     background-color: #FFC800;
+                                     border-radius: 12px;" />
+        </ui:VisualElement>
+
+        <!-- Section Katalog Header -->
+        <ui:VisualElement class="section-header"
+            style="padding-left: 24px;
+                                 padding-right: 24px;
+                                 flex-shrink: 0;">
+            <ui:Label text="Katalog Furnitur" class="section-header__title" />
+            <ui:Label name="btn-lihat-semua-katalog"
+                text="Lihat Semua >"
+                class="section-header__action" />
+        </ui:VisualElement>
+
+        <!-- Horizontal ScrollView -->
+        <ui:ScrollView name="scroll-preview-katalog"
+            scroll-direction="Horizontal"
+            vertical-scrollbar-visibility="Hidden"
+            horizontal-scrollbar-visibility="Hidden"
+            style="flex-shrink: 0; margin-bottom: 12px; padding-right: 24px; padding-left: 24px; ">
+            <ui:VisualElement name="preview-katalog"
+                style="flex-direction: row;" />
+        </ui:ScrollView>
+
+        <!-- Section Proyek -->
+        <ui:VisualElement name="section-proyek"
+            style="padding-left: 24px;
+                                 padding-right: 24px;
+                                 flex: 1;">
+            <ui:VisualElement class="section-header">
+                <ui:Label text="Proyek" class="section-header__title" />
+                <ui:Label name="btn-lihat-semua-proyek"
+                    text="Lihat Semua >"
+                    class="section-header__action" />
+            </ui:VisualElement>
+
+            <ui:VisualElement name="proyek-empty-state"
+                style="align-items: center; padding: 24px;">
+                <ui:Label text="Belum ada proyek yang ditambahkan"
+                    class="text-muted" />
+            </ui:VisualElement>
+
+            <ui:VisualElement name="proyek-list"
+                style="display: none;" />
+        </ui:VisualElement>
+
+    </ui:VisualElement>
+</ui:UXML>

@@ -1,0 +1,59 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="../USS/AppStyles.uss" />
+
+    <ui:VisualElement name="screen-katalog" class="screen">
+
+        <!-- Top Bar -->
+        <ui:VisualElement class="top-bar">
+            <ui:Label name="btn-back" class="btn-back" />
+            <ui:Label text="Katalog" class="top-bar__title" />
+        </ui:VisualElement>
+
+        <!-- Search -->
+        <ui:VisualElement class="search-bar">
+            <ui:TextField name="search-input"
+                class="search-bar__input"
+                placeholder-text="Cari furnitur..." />
+        </ui:VisualElement>
+
+        <!-- Filter Chips -->
+        <ui:ScrollView name="filter-scroll"
+            class="filter-scroll"
+            scroll-direction="Horizontal"
+            touch-scroll-type="Clamped"
+            vertical-scrollbar-visibility="Hidden"
+            horizontal-scrollbar-visibility="Hidden"
+            mouse-wheel-scroll-size="120"
+            style="flex-shrink: 0; ">
+            <ui:VisualElement name="filter-container" class="filter-container">
+                <ui:VisualElement name="chip-semua" class="chip chip--active">
+                    <ui:Label text="Semua" class="chip__label" />
+                </ui:VisualElement>
+                <ui:VisualElement name="chip-meja" class="chip">
+                    <ui:Label text="Meja" class="chip__label" />
+                </ui:VisualElement>
+                <ui:VisualElement name="chip-kursi" class="chip">
+                    <ui:Label text="Kursi" class="chip__label" />
+                </ui:VisualElement>
+                <ui:VisualElement name="chip-sofa" class="chip">
+                    <ui:Label text="Sofa" class="chip__label" />
+                </ui:VisualElement>
+                <ui:VisualElement name="chip-lemari" class="chip">
+                    <ui:Label text="Lemari" class="chip__label" />
+                </ui:VisualElement>
+                <ui:VisualElement name="chip-kasur" class="chip">
+                    <ui:Label text="Kasur" class="chip__label" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:ScrollView>
+
+        <!-- Grid -->
+        <ui:ScrollView name="scroll-grid"
+            vertical-scrollbar-visibility="Hidden"
+            horizontal-scrollbar-visibility="Hidden"
+            style="flex: 1; overflow: hidden;">
+            <ui:VisualElement name="furniture-grid" class="furniture-grid" />
+        </ui:ScrollView>
+
+    </ui:VisualElement>
+</ui:UXML>
