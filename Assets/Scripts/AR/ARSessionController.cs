@@ -58,9 +58,6 @@ public class ARSessionController : MonoBehaviour
         Debug.Log($"[ARSession] ReturnToScreen set to: {AppState.ReturnToScreen}");
         yield return new WaitForSeconds(0.4f);
         SceneManager.LoadScene("Main");
-
-        yield return new WaitForSeconds(0.4f);
-        SceneManager.LoadScene("Main");
     }
 
     private string SaveScreenshot(Texture2D screenshot)

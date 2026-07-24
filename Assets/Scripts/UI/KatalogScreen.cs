@@ -47,10 +47,13 @@ public class KatalogScreen : MonoBehaviour
         RefreshGrid("");
     }
 
+    private void OnSearchChanged(ChangeEvent<string> evt) => RefreshGrid(evt.newValue);
+
     private void OnDisable()
     {
         _root?.Q<Label>("btn-back")
               ?.UnregisterCallback<ClickEvent>(OnBackClick);
+        _searchInput?.UnregisterValueChangedCallback(OnSearchChanged);
         _scrollSetupDone = false;
     }
 

@@ -42,7 +42,6 @@ public class TangkapanLayarScreen : MonoBehaviour
         {
             preview.style.backgroundImage = new StyleBackground(
                 AppState.LastScreenshotTexture);
-
             preview.style.backgroundSize = new StyleBackgroundSize(
                 new BackgroundSize(BackgroundSizeType.Cover));
 
@@ -53,15 +52,12 @@ public class TangkapanLayarScreen : MonoBehaviour
 
     private void OnClose()
     {
-        // Buang screenshot dari memory
         ClearScreenshotState();
         ScreenManager.Instance.ShowDashboard();
     }
 
     private void OnSimpanGaleri()
     {
-        // Screenshot sudah tersimpan ke galeri saat diambil di ARSession
-        // Navigasi keluar tanpa simpan ke proyek
         ShowToast("Screenshot tersimpan di galeri");
         ClearScreenshotState();
         ScreenManager.Instance.ShowDashboard();
@@ -89,7 +85,6 @@ public class TangkapanLayarScreen : MonoBehaviour
         if (string.IsNullOrEmpty(namaTangkapan))
             namaTangkapan = $"AR_{DateTime.Now:yyyyMMdd_HHmmss}";
 
-        // Disable tombol sementara
         var btnSimpan = _root.Q<VisualElement>("btn-simpan-proyek");
         if (btnSimpan != null) btnSimpan.SetEnabled(false);
 
@@ -125,28 +120,6 @@ public class TangkapanLayarScreen : MonoBehaviour
         }
     }
 
-    private void SaveToProject(string namaProyek, string namaTangkapan, string catatan)
-    {
-        // Simpan via PlayerPrefs untuk sekarang
-        // Nanti bisa diganti ke SQLite atau JSON file
-        string timestamp = DateTime.Now.ToString("o");
-        string key = $"proyek_{namaProyek}_{timestamp}";
-
-        string data = JsonUtility.ToJson(new ProjectEntry
-        {
-            namaProyek = namaProyek,
-            namaTangkapan = namaTangkapan,
-            catatan = catatan,
-            screenshotPath = AppState.LastScreenshotPath,
-            timestamp = timestamp
-        });
-
-        PlayerPrefs.SetString(key, data);
-        PlayerPrefs.Save();
-
-        Debug.Log($"[Proyek] Disimpan: {key}");
-    }
-
     private void ClearScreenshotState()
     {
         if (AppState.LastScreenshotTexture != null)
@@ -163,8 +136,8 @@ public class TangkapanLayarScreen : MonoBehaviour
         try
         {
             var unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
-            var activity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity");
-            var toastClass = new AndroidJavaClass("android.widget.Toast");
+            var activity    = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity");
+            var toastClass  = new AndroidJavaClass("android.widget.Toast");
             activity.Call("runOnUiThread", new AndroidJavaRunnable(() =>
             {
                 toastClass.CallStatic<AndroidJavaObject>(
@@ -181,14 +154,4 @@ public class TangkapanLayarScreen : MonoBehaviour
         Debug.Log($"[Toast] {message}");
 #endif
     }
-}
-
-[Serializable]
-public class ProjectEntry
-{
-    public string namaProyek;
-    public string namaTangkapan;
-    public string catatan;
-    public string screenshotPath;
-    public string timestamp;
 }
