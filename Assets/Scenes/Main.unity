@@ -129,7 +129,7 @@ GameObject:
   m_Component:
   - component: {fileID: 332290741}
   - component: {fileID: 332290742}
-  - component: {fileID: 332290743}
+  - component: {fileID: 332290745}
   - component: {fileID: 332290744}
   m_Layer: 0
   m_Name: _AppManager
@@ -172,18 +172,6 @@ MonoBehaviour:
   screenDetailProyek: {fileID: 1464963796}
   screenTangkapanLayar: {fileID: 828291919}
   _currentScreen: {fileID: 0}
---- !u!114 &332290743
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 332290740}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e7d07649e42f89f4382adda530493745, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::AppStartup
 --- !u!114 &332290744
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -202,6 +190,18 @@ MonoBehaviour:
   screenProyek: {fileID: 1393445163}
   screenDetailProyek: {fileID: 1464963796}
   screenTangkapanLayar: {fileID: 828291919}
+--- !u!114 &332290745
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 332290740}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5d09ffd2055bc45418be52004694a416, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AppStartup
 --- !u!1 &542345005
 GameObject:
   m_ObjectHideFlags: 0
@@ -291,7 +291,6 @@ GameObject:
   m_Component:
   - component: {fileID: 605909289}
   - component: {fileID: 605909290}
-  - component: {fileID: 605909291}
   - component: {fileID: 605909292}
   m_Layer: 0
   m_Name: Screen_DetailFurnitur
@@ -338,18 +337,6 @@ MonoBehaviour:
   m_PivotReferenceSize: 0
   m_Pivot: 0
   m_WorldSpaceCollider: {fileID: 0}
---- !u!114 &605909291
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 605909288}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ffd986182b2822f4289c62030e789bff, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DetailFurniturScreen
 --- !u!114 &605909292
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -372,8 +359,6 @@ GameObject:
   m_Component:
   - component: {fileID: 828291920}
   - component: {fileID: 828291921}
-  - component: {fileID: 828291922}
-  - component: {fileID: 828291923}
   - component: {fileID: 828291924}
   m_Layer: 0
   m_Name: Screen_TangkapanLayar
@@ -420,30 +405,6 @@ MonoBehaviour:
   m_PivotReferenceSize: 0
   m_Pivot: 0
   m_WorldSpaceCollider: {fileID: 0}
---- !u!114 &828291922
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 828291919}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d6dd9f983b14fb145adce55ad308f791, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TangkapanLayarScreen
---- !u!114 &828291923
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 828291919}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2b08299a182661f478ea7205f1e60334, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TangkapanLayarScreen
 --- !u!114 &828291924
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -465,7 +426,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 835740818}
-  - component: {fileID: 835740817}
   - component: {fileID: 835740820}
   - component: {fileID: 835740819}
   m_Layer: 0
@@ -475,18 +435,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &835740817
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 835740816}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 442453daebc6e514782e19602ff11120, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::BackButtonHandler
 --- !u!4 &835740818
 Transform:
   m_ObjectHideFlags: 0
@@ -673,7 +621,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1393445164}
   - component: {fileID: 1393445165}
-  - component: {fileID: 1393445166}
   - component: {fileID: 1393445167}
   m_Layer: 0
   m_Name: Screen_Proyek
@@ -720,18 +667,6 @@ MonoBehaviour:
   m_PivotReferenceSize: 0
   m_Pivot: 0
   m_WorldSpaceCollider: {fileID: 0}
---- !u!114 &1393445166
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1393445163}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cbf43fe182c1e6b4487215f4a4b542e3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ProyekScreen
 --- !u!114 &1393445167
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -754,7 +689,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1464963797}
   - component: {fileID: 1464963798}
-  - component: {fileID: 1464963799}
   - component: {fileID: 1464963800}
   m_Layer: 0
   m_Name: Screen_DetailProyek
@@ -801,18 +735,6 @@ MonoBehaviour:
   m_PivotReferenceSize: 0
   m_Pivot: 0
   m_WorldSpaceCollider: {fileID: 0}
---- !u!114 &1464963799
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1464963796}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ad1ed07b073a3664980a2dbcdb3984c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DetailProyekScreen
 --- !u!114 &1464963800
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1057,7 +979,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1616722608}
   - component: {fileID: 1616722610}
-  - component: {fileID: 1616722609}
   - component: {fileID: 1616722611}
   m_Layer: 0
   m_Name: Screen_Katalog
@@ -1081,18 +1002,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1616722609
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1616722607}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4cd642ac9b8d88d429f371912accbfc1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::KatalogScreen
 --- !u!114 &1616722610
 MonoBehaviour:
   m_ObjectHideFlags: 0
