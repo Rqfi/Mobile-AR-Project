@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "583225406833",
+    "project_id": "pyrenees-da24f",
+    "storage_bucket": "pyrenees-da24f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:583225406833:android:dd487fc7d4091178d372d0",
+        "android_client_info": {
+          "package_name": "com.unity.template.ar_mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD2x568yvUjWrspSh6cTmLbgQqHfztXUSI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

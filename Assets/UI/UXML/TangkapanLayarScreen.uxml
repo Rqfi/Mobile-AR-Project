@@ -5,7 +5,7 @@
 
         <!-- Top Bar -->
         <ui:VisualElement class="top-bar" style="flex-shrink: 0;">
-            <ui:Label name="btn-close" text="✕" class="top-bar__back" />
+            <ui:Label name="btn-close" class="btn-back" />
             <ui:Label text="Tangkapan Layar" class="top-bar__title" />
         </ui:VisualElement>
 
@@ -16,7 +16,7 @@
             <!-- Preview screenshot -->
             <ui:VisualElement name="preview-screenshot"
                 style="border-radius: 16px;
-                                     height: 280px;
+                                     height: 1000px;
                                      margin-top: 16px;
                                      margin-bottom: 24px;
                                      background-color: #2A2A2A;
@@ -45,36 +45,6 @@
                     placeholder-text="Contoh: Ruang Tamu Lantai 1" />
             </ui:VisualElement>
 
-            <!-- Nama Tangkapan -->
-            <ui:Label text="Nama Tangkapan (opsional)"
-                class="text-body"
-                style="margin-bottom: 6px;" />
-            <ui:VisualElement class="search-bar"
-                style="margin-left: 0;
-                                     margin-right: 0;
-                                     margin-bottom: 16px;">
-                <ui:TextField name="input-nama"
-                    class="search-bar__input"
-                    placeholder-text="Biarkan kosong untuk nama otomatis" />
-            </ui:VisualElement>
-
-            <!-- Catatan -->
-            <ui:Label text="Catatan (opsional)"
-                class="text-body"
-                style="margin-bottom: 6px;" />
-            <ui:VisualElement class="search-bar"
-                style="margin-left: 0;
-                                     margin-right: 0;
-                                     margin-bottom: 32px;
-                                     height: 100px;
-                                     align-items: flex-start;
-                                     padding-top: 12px;">
-                <ui:TextField name="input-catatan"
-                    class="search-bar__input"
-                    multiline="true"
-                    placeholder-text="Tambahkan catatan..." />
-            </ui:VisualElement>
-
         </ui:ScrollView>
 
         <!-- Bottom actions -->
@@ -82,20 +52,9 @@
             style="flex-direction: row;
                                  gap: 12px;
                                  flex-shrink: 0;">
-            <ui:VisualElement name="btn-simpan-galeri"
-                style="flex: 1;
-                                     background-color: #2A2A2A;
-                                     border-radius: 12px;
-                                     height: 56px;
-                                     align-items: center;
-                                     justify-content: center;
-                                     cursor: link;">
-                <ui:Label text="Simpan ke Galeri"
-                    style="font-size: 24px; color: #FFFFFF;" />
-            </ui:VisualElement>
             <ui:VisualElement name="btn-simpan-proyek"
                 class="btn-ar"
-                style="flex: 1; margin-top: 0; height: 56px;">
+                style="flex: 1; margin-top: 0;">
                 <ui:Label text="Simpan ke Proyek"
                     class="btn-ar__label"
                     style="font-size: 22px;" />

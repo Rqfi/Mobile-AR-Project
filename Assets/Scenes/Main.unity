@@ -165,13 +165,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: db68cbda550084f4d9c766e75c0504a5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  screenDashboard: {fileID: 1563756387}
-  screenKatalog: {fileID: 1616722607}
-  screenDetailFurnitur: {fileID: 605909288}
-  screenProyek: {fileID: 1393445163}
-  screenDetailProyek: {fileID: 1464963796}
-  screenTangkapanLayar: {fileID: 828291919}
-  _currentScreen: {fileID: 0}
 --- !u!114 &332290744
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -779,7 +772,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c3fc9795d47365340baf678320a4d47a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  _scrollSetupDone: 0
 --- !u!114 &1563756389
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -4,6 +4,7 @@
   <Project Path="Unity.XR.Interaction.Toolkit.Samples.StarterAssets.csproj" />
   <Project Path="Firebase.Functions.csproj" />
   <Project Path="Unity.XR.Interaction.Toolkit.Samples.ARStarterAssets.csproj" />
+  <Project Path="Assembly-CSharp-Editor.csproj" />
   <Project Path="Unity.XR.Interaction.Toolkit.Samples.ARStarterAssets.Editor.csproj" />
   <Project Path="Unity.XR.Interaction.Toolkit.Samples.StarterAssets.Editor.csproj" />
 </Solution>

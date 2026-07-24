@@ -1,3 +1,10 @@
+buildscript {
+    dependencies {
+        // Tambah baris ini
+        classpath 'com.google.gms:google-services:4.4.1'
+    }
+}
+
 plugins {
     // If you are changing the Android Gradle Plugin version, make sure it is compatible with the Gradle version preinstalled with Unity
     // See which Gradle version is preinstalled with Unity here https://docs.unity3d.com/Manual/android-gradle-overview.html

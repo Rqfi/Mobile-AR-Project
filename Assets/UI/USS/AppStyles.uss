@@ -357,6 +357,8 @@
     height: 883px;
     align-items: center;
     justify-content: center;
+    border-width: 1px;
+    border-color: var(--color-primary);
 }
 
 .detail-body {
@@ -409,12 +411,13 @@
 .btn-back {
     width: 50px;
     height: 50px;
-    background-color: #FFC800;
+    background-image: url('project://database/Assets/UI/Resources/arrow-l.svg');
+    -unity-background-scale-mode: scale-to-fit;
     margin-right: 20px;
 }
 
 .btn-ar {
-    background-color: #FFC800;
+    background-color: var(--color-primary);
     border-width: 0;
     border-radius: 12px;
     align-items: center;
