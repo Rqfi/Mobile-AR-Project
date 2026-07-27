@@ -7,9 +7,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:583225406833:android:dd487fc7d4091178d372d0",
+        "mobilesdk_app_id": "1:583225406833:android:8822b2ea5d0667f0d372d0",
         "android_client_info": {
-          "package_name": "com.unity.template.ar_mobile"
+          "package_name": "com.homei.arinterior"
         }
       },
       "oauth_client": [],
