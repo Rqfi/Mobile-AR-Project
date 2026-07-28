@@ -1,11 +1,15 @@
 using UnityEngine;
 using UnityEngine.UIElements;
 using UnityEngine.SceneManagement;
+using System;
+using System.Collections.Generic;
 
 public class DashboardScreen : MonoBehaviour
 {
     private VisualElement _root;
     private VisualElement _previewKatalog;
+    private VisualElement _proyekList;
+    private VisualElement _proyekEmptyState;
     private bool _scrollSetupDone = false;
 
     private void OnEnable()
@@ -13,6 +17,8 @@ public class DashboardScreen : MonoBehaviour
         var uiDoc = GetComponent<UIDocument>();
         _root = uiDoc.rootVisualElement;
         _previewKatalog = _root.Q<VisualElement>("preview-katalog");
+        _proyekList = _root.Q<VisualElement>("proyek-list");
+        _proyekEmptyState = _root.Q<VisualElement>("proyek-empty-state");
 
         _root.Q<VisualElement>("card-hero")
              ?.RegisterCallback<ClickEvent>(OnHeroClick);
@@ -34,6 +40,7 @@ public class DashboardScreen : MonoBehaviour
         }
 
         PopulateKatalogPreview();
+        LoadProyekPreview();
     }
 
     private void OnDisable()
@@ -159,5 +166,126 @@ public class DashboardScreen : MonoBehaviour
         });
 
         return card;
+    }
+
+    private async void LoadProyekPreview()
+    {
+        if (_proyekList == null) return;
+        _proyekList.Clear();
+
+        // Tunggu sampai FirebaseManager.Instance terinisialisasi dan siap (IsReady)
+        float timeout = 5f;
+        float elapsed = 0f;
+        while ((FirebaseManager.Instance == null || !FirebaseManager.Instance.IsReady) && elapsed < timeout)
+        {
+            await System.Threading.Tasks.Task.Delay(100);
+            elapsed += 0.1f;
+        }
+
+        if (FirebaseManager.Instance == null || !FirebaseManager.Instance.IsReady)
+        {
+            ShowProyekEmptyState(true);
+            return;
+        }
+
+        try
+        {
+            var proyekList = await FirebaseManager.Instance.GetAllProyekAsync();
+            if (proyekList == null || proyekList.Count == 0)
+            {
+                ShowProyekEmptyState(true);
+            }
+            else
+            {
+                ShowProyekEmptyState(false);
+                int count = Mathf.Min(2, proyekList.Count);
+                for (int i = 0; i < count; i++)
+                {
+                    _proyekList.Add(CreateProyekCardDashboard(proyekList[i]));
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning($"[DashboardScreen] LoadProyekPreview: {e.Message}");
+            ShowProyekEmptyState(true);
+        }
+    }
+
+    private void ShowProyekEmptyState(bool isEmpty)
+    {
+        if (isEmpty)
+        {
+            _proyekEmptyState?.SetDisplay(true);
+            _proyekList?.SetDisplay(false);
+        }
+        else
+        {
+            _proyekEmptyState?.SetDisplay(false);
+            _proyekList?.SetDisplay(true);
+        }
+    }
+
+    private VisualElement CreateProyekCardDashboard(ProyekData proyek)
+    {
+        var card = new VisualElement();
+        card.AddToClassList("proyek-card__dashboard");
+
+        // Thumbnail
+        var thumb = new VisualElement();
+        thumb.AddToClassList("proyek-card__thumb-dashboard");
+
+        if (!string.IsNullOrEmpty(proyek.thumbnailPath) &&
+            System.IO.File.Exists(proyek.thumbnailPath))
+        {
+            var bytes = System.IO.File.ReadAllBytes(proyek.thumbnailPath);
+            var tex = new Texture2D(2, 2);
+            tex.LoadImage(bytes);
+            thumb.style.backgroundImage = new StyleBackground(tex);
+            thumb.style.backgroundSize = new StyleBackgroundSize(
+                new BackgroundSize(BackgroundSizeType.Cover));
+        }
+        else
+        {
+            var placeholder = new VisualElement();
+            placeholder.AddToClassList("proyek-card__thumb-placeholder");
+            thumb.Add(placeholder);
+        }
+
+        // Info
+        var info = new VisualElement();
+        info.AddToClassList("proyek-card__info");
+
+        var nama = new Label(proyek.nama);
+        nama.AddToClassList("proyek-card__name-dashboard");
+
+        var tanggal = new Label(FormatTanggal(proyek.tanggal));
+        tanggal.AddToClassList("proyek-card__date-dashboard");
+
+        info.Add(nama);
+        info.Add(tanggal);
+
+        // Arrow
+        var arrow = new Label("›");
+        arrow.AddToClassList("proyek-card__arrow");
+
+        card.Add(thumb);
+        card.Add(info);
+        card.Add(arrow);
+
+        card.RegisterCallback<ClickEvent>(_ =>
+        {
+            AppState.ActiveProjectId = proyek.id;
+            ScreenManager.Instance.ShowDetailProyek();
+        });
+
+        return card;
+    }
+
+    private string FormatTanggal(string iso)
+    {
+        if (DateTime.TryParse(iso, out var dt))
+            return dt.ToString("dd MMM yyyy");
+        return iso;
     }
 }

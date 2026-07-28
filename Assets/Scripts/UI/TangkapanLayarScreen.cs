@@ -1,15 +1,28 @@
 using UnityEngine;
 using UnityEngine.UIElements;
 using System;
-using System.IO;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 public class TangkapanLayarScreen : MonoBehaviour
 {
     private VisualElement _root;
-    private TextField _inputProyek;
+    private TextField _inputNamaBaru;
     private TextField _inputNama;
     private TextField _inputCatatan;
+
+    private VisualElement _dropdownTrigger;
+    private VisualElement _dropdownList;
+    private VisualElement _newProyekContainer;
+    private Label _labelSelected;
+    private Label _labelArrow;
+
+    private bool _dropdownOpen = false;
+    private bool _isNewProject = false;
+    private string _selectedProyekId = null;
+    private string _selectedProyekNama = null;
+
+    private List<ProyekData> _existingProyek = new List<ProyekData>();
 
     private void OnEnable()
     {
@@ -17,20 +30,156 @@ public class TangkapanLayarScreen : MonoBehaviour
         if (uiDoc == null) return;
         _root = uiDoc.rootVisualElement;
 
-        _inputProyek = _root.Q<TextField>("input-proyek");
+        _inputNamaBaru = _root.Q<TextField>("input-proyek-baru");
         _inputNama = _root.Q<TextField>("input-nama");
         _inputCatatan = _root.Q<TextField>("input-catatan");
 
+        _dropdownTrigger = _root.Q<VisualElement>("proyek-dropdown-trigger");
+        _dropdownList = _root.Q<VisualElement>("proyek-dropdown-list");
+        _newProyekContainer = _root.Q<VisualElement>("new-proyek-container");
+        _labelSelected = _root.Q<Label>("label-proyek-selected");
+        _labelArrow = _root.Q<Label>("label-arrow");
+
+        _dropdownTrigger?.RegisterCallback<ClickEvent>(_ => ToggleDropdown());
+
         _root.Q<Label>("btn-close")
              ?.RegisterCallback<ClickEvent>(_ => OnClose());
-
         _root.Q<VisualElement>("btn-simpan-galeri")
              ?.RegisterCallback<ClickEvent>(_ => OnSimpanGaleri());
-
         _root.Q<VisualElement>("btn-simpan-proyek")
              ?.RegisterCallback<ClickEvent>(_ => OnSimpanProyek());
 
+        ResetDropdown();
         LoadScreenshotPreview();
+        LoadExistingProyek();
+    }
+
+    private void ResetDropdown()
+    {
+        _dropdownOpen = false;
+        _isNewProject = false;
+        _selectedProyekId = null;
+        _selectedProyekNama = null;
+
+        if (_labelSelected != null)
+        {
+            _labelSelected.text = "Pilih atau buat proyek...";
+            _labelSelected.AddToClassList("dropdown-trigger__placeholder");
+        }
+        if (_labelArrow != null) _labelArrow.text = "∨";
+        _dropdownList?.SetDisplay(false);
+        _newProyekContainer?.SetDisplay(false);
+    }
+
+    private async void LoadExistingProyek()
+    {
+        if (!FirebaseManager.Instance.IsReady)
+        {
+            // Tunggu sebentar lalu coba lagi
+            await Task.Delay(2000);
+            if (!FirebaseManager.Instance.IsReady) return;
+        }
+
+        try
+        {
+            _existingProyek = await FirebaseManager.Instance.GetAllProyekAsync();
+            BuildDropdownItems();
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning($"[TangkapanLayar] LoadProyek: {e.Message}");
+        }
+    }
+
+    private void BuildDropdownItems()
+    {
+        if (_dropdownList == null) return;
+        _dropdownList.Clear();
+
+        // Item proyek yang sudah ada
+        foreach (var proyek in _existingProyek)
+        {
+            var item = CreateDropdownItem(proyek.nama, false, proyek.id, proyek.nama);
+            _dropdownList.Add(item);
+        }
+
+        // Item "+ Tambah Proyek"
+        var addItem = new VisualElement();
+        addItem.AddToClassList("dropdown-item");
+        addItem.AddToClassList("dropdown-item--add");
+        var addLabel = new Label("+ Tambah Proyek");
+        addLabel.AddToClassList("dropdown-item__label");
+        addItem.Add(addLabel);
+        addItem.RegisterCallback<ClickEvent>(_ => OnAddNewProyek());
+        _dropdownList.Add(addItem);
+    }
+
+    private VisualElement CreateDropdownItem(
+        string displayText,
+        bool isSelected,
+        string proyekId,
+        string proyekNama)
+    {
+        var item = new VisualElement();
+        item.AddToClassList("dropdown-item");
+        if (isSelected) item.AddToClassList("dropdown-item--selected");
+
+        var label = new Label(displayText);
+        label.AddToClassList("dropdown-item__label");
+        item.Add(label);
+
+        item.RegisterCallback<ClickEvent>(_ =>
+            OnProyekSelected(proyekId, proyekNama));
+
+        return item;
+    }
+
+    private void ToggleDropdown()
+    {
+        _dropdownOpen = !_dropdownOpen;
+
+        _dropdownList?.SetDisplay(_dropdownOpen);
+        if (_labelArrow != null)
+            _labelArrow.text = _dropdownOpen ? "∧" : "∨";
+    }
+
+    private void OnProyekSelected(string id, string nama)
+    {
+        _selectedProyekId = id;
+        _selectedProyekNama = nama;
+        _isNewProject = false;
+
+        if (_labelSelected != null)
+        {
+            _labelSelected.text = nama;
+            _labelSelected.RemoveFromClassList("dropdown-trigger__placeholder");
+        }
+
+        _dropdownOpen = false;
+        _dropdownList?.SetDisplay(false);
+        _newProyekContainer?.SetDisplay(false);
+        if (_labelArrow != null) _labelArrow.text = "∨";
+
+        // Update highlight di list
+        BuildDropdownItems();
+    }
+
+    private void OnAddNewProyek()
+    {
+        _isNewProject = true;
+        _selectedProyekId = null;
+        _selectedProyekNama = null;
+
+        if (_labelSelected != null)
+        {
+            _labelSelected.text = "+ Proyek Baru";
+            _labelSelected.RemoveFromClassList("dropdown-trigger__placeholder");
+        }
+
+        _dropdownOpen = false;
+        _dropdownList?.SetDisplay(false);
+        _newProyekContainer?.SetDisplay(true);
+        if (_labelArrow != null) _labelArrow.text = "∨";
     }
 
     private void LoadScreenshotPreview()
@@ -65,11 +214,25 @@ public class TangkapanLayarScreen : MonoBehaviour
 
     private async void OnSimpanProyek()
     {
-        string namaProyek = _inputProyek?.value?.Trim() ?? "";
+        // Tentukan nama proyek
+        string namaProyek = "";
 
-        if (string.IsNullOrEmpty(namaProyek))
+        if (_isNewProject)
         {
-            ShowToast("Nama proyek tidak boleh kosong");
+            namaProyek = _inputNamaBaru?.value?.Trim() ?? "";
+            if (string.IsNullOrEmpty(namaProyek))
+            {
+                ShowToast("Masukkan nama proyek baru");
+                return;
+            }
+        }
+        else if (!string.IsNullOrEmpty(_selectedProyekNama))
+        {
+            namaProyek = _selectedProyekNama;
+        }
+        else
+        {
+            ShowToast("Pilih atau buat proyek terlebih dahulu");
             return;
         }
 
@@ -90,8 +253,19 @@ public class TangkapanLayarScreen : MonoBehaviour
 
         try
         {
-            string projectId = await FirebaseManager.Instance
-                .GetOrCreateProyekAsync(namaProyek);
+            string projectId;
+
+            if (_isNewProject)
+            {
+                // Buat proyek baru
+                projectId = await FirebaseManager.Instance
+                    .GetOrCreateProyekAsync(namaProyek);
+            }
+            else
+            {
+                // Pakai proyek yang sudah ada
+                projectId = _selectedProyekId;
+            }
 
             if (projectId == null)
             {

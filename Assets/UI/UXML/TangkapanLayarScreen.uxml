@@ -9,9 +9,10 @@
             <ui:Label text="Tangkapan Layar" class="top-bar__title" />
         </ui:VisualElement>
 
-        <ui:ScrollView vertical-scrollbar-visibility="Hidden"
-            horizontal-scrollbar-visibility="Hidden"
-            style="flex: 1; padding-left: 24px; padding-right: 24px;">
+        <ui:ScrollView name="scroll-main" 
+                       vertical-scrollbar-visibility="Hidden"
+                       horizontal-scrollbar-visibility="Hidden"
+                       style="flex: 1; padding-left: 24px; padding-right: 24px; margin-bottom: 48px;">
 
             <!-- Preview screenshot -->
             <ui:VisualElement name="preview-screenshot"
@@ -34,15 +35,34 @@
                 style="margin-bottom: 12px;" />
 
             <ui:Label text="Nama Proyek"
-                class="text-body"
-                style="margin-bottom: 6px;" />
-            <ui:VisualElement class="search-bar"
-                style="margin-left: 0;
-                                     margin-right: 0;
-                                     margin-bottom: 16px;">
-                <ui:TextField name="input-proyek"
-                    class="search-bar__input"
-                    placeholder-text="Contoh: Ruang Tamu Lantai 1" />
+                      class="text-body"
+                      style="margin-bottom: 6px;" />
+
+            <ui:VisualElement name="proyek-dropdown-trigger"
+                              class="dropdown-trigger">
+                <ui:Label name="label-proyek-selected"
+                          text="Pilih atau buat proyek..."
+                          class="dropdown-trigger__text
+                                 dropdown-trigger__placeholder" />
+                <ui:Label name="label-arrow"
+                          text="∨"
+                          class="dropdown-trigger__arrow" />
+            </ui:VisualElement>
+
+            <ui:VisualElement name="proyek-dropdown-list"
+                              class="dropdown-list"
+                              style="display: none;" />
+
+            <ui:VisualElement name="new-proyek-container"
+                              style="display: none; margin-top: 8px;">
+                <ui:VisualElement class="search-bar"
+                                  style="margin-left: 0;
+                                         margin-right: 0;
+                                         margin-bottom: 0;">
+                    <ui:TextField name="input-proyek-baru"
+                                  class="search-bar__input"
+                                  placeholder-text="Nama proyek baru..." />
+                </ui:VisualElement>
             </ui:VisualElement>
 
         </ui:ScrollView>

@@ -1,0 +1,58 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="../USS/AppStyles.uss" />
+
+    <ui:VisualElement name="screen-detail-foto" class="screen">
+
+        <!-- Top Bar -->
+        <ui:VisualElement class="top-bar">
+            <ui:Label name="btn-back" class="btn-back" />
+            <ui:Label text="Detail Foto" class="top-bar__title" />
+        </ui:VisualElement>
+
+        <ui:ScrollView vertical-scrollbar-visibility="Hidden"
+            horizontal-scrollbar-visibility="Hidden"
+            style="flex: 1; padding-left: 24px; padding-right: 24px;">
+
+            <!-- Preview Gambar Besar -->
+            <ui:VisualElement name="preview-large-image"
+                style="width: 100%;
+                       height: 1200px;
+                       background-color: #FEF7E5;
+                       margin-bottom: 24px;
+                       -unity-background-scale-mode: scale-to-fit;" />
+
+            <!-- Informasi Gambar -->
+            <ui:VisualElement style="margin-bottom: 32px;">
+                <ui:Label text="Nama Foto" class="text-caption"
+                    style="color: #737373; font-size: 20px;" />
+                <ui:Label name="label-nama-foto" text="Nama Foto" class="text-h2"
+                    style="margin-top: 4px; margin-bottom: 16px;" />
+
+                <ui:Label text="Waktu Pengambilan" class="text-caption"
+                    style="color: #737373; font-size: 20px;" />
+                <ui:Label name="label-tanggal-foto" text="Waktu Foto" class="text-body"
+                    style="margin-top: 4px; margin-bottom: 16px;" />
+            </ui:VisualElement>
+
+
+            <!-- Tombol Aksi -->
+            <ui:VisualElement style="flex-direction: row; margin-bottom: 40px;">
+                <ui:VisualElement name="btn-simpan-galeri"
+                    class="modal-card__btn modal-card__btn--primary"
+                    style="height: 80px; margin-right: 16px;">
+                    <ui:Label text="Simpan ke Galeri"
+                        class="modal-card__btn-label" />
+                </ui:VisualElement>
+
+                <ui:VisualElement name="btn-hapus-gambar"
+                    class="modal-card__btn modal-card__btn--danger"
+                    style="height: 80px; margin-left: 16px;">
+                    <ui:Label text="Hapus Gambar"
+                        class="modal-card__btn-label" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+        </ui:ScrollView>
+
+    </ui:VisualElement>
+</ui:UXML>

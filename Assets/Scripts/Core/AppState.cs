@@ -7,4 +7,5 @@ public static class AppState
     public static string LastScreenshotPath;
     public static Texture2D LastScreenshotTexture;
     public static string ReturnToScreen;
+    public static ScreenshotData SelectedScreenshot;
 }

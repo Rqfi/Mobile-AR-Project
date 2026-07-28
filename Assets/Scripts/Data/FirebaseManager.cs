@@ -254,4 +254,53 @@ public class FirebaseManager : MonoBehaviour
             Debug.LogWarning($"[Firebase] DeleteScreenshot: {e.Message}");
         }
     }
+
+    public async Task<ProyekData> GetProyekByIdAsync(string projectId)
+    {
+        try
+        {
+            var doc = await ProjectsRef()
+                .Document(projectId)
+                .GetSnapshotAsync();
+
+            if (!doc.Exists) return null;
+
+            string thumbPath = "";
+            try { thumbPath = doc.GetValue<string>("thumbnailPath"); }
+            catch { }
+
+            return new ProyekData
+            {
+                id = doc.Id,
+                nama = doc.GetValue<string>("nama"),
+                tanggal = doc.GetValue<string>("tanggal"),
+                thumbnailPath = thumbPath,
+                screenshots = new System.Collections.Generic.List<ScreenshotData>()
+            };
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning($"[Firebase] GetProyekById: {e.Message}");
+            return null;
+        }
+    }
+
+    public async Task UpdateProyekNamaAsync(string projectId, string namaBaru)
+    {
+        try
+        {
+            await ProjectsRef().Document(projectId).UpdateAsync(
+                new Dictionary<string, object>
+                {
+                { "nama", namaBaru }
+                });
+
+            Debug.Log($"[Firebase] Nama proyek diupdate: {namaBaru}");
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"[Firebase] UpdateProyekNama: {e.Message}");
+            throw;
+        }
+    }
 }

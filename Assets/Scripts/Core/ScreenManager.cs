@@ -13,6 +13,7 @@ public class ScreenManager : MonoBehaviour
     [SerializeField] private GameObject screenProyek;
     [SerializeField] private GameObject screenDetailProyek;
     [SerializeField] private GameObject screenTangkapanLayar;
+    [SerializeField] private GameObject screenDetailFoto;
 
     private Dictionary<string, GameObject> _screens;
     private Stack<string> _history = new Stack<string>();
@@ -35,6 +36,7 @@ public class ScreenManager : MonoBehaviour
         { "Proyek",         screenProyek },
         { "DetailProyek",   screenDetailProyek },
         { "TangkapanLayar", screenTangkapanLayar },
+        { "DetailFoto",     screenDetailFoto },
     };
 
         // Disable SEMUA screen dulu — cegah Dashboard aktif bersamaan
@@ -94,6 +96,7 @@ public class ScreenManager : MonoBehaviour
     public void ShowProyek() => NavigateTo("Proyek");
     public void ShowDetailProyek() => NavigateTo("DetailProyek");
     public void ShowTangkapanLayar() => NavigateTo("TangkapanLayar");
+    public void ShowDetailFoto() => NavigateTo("DetailFoto");
 
     private void SwitchTo(GameObject target)
     {

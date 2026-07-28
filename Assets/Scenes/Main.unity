@@ -183,6 +183,7 @@ MonoBehaviour:
   screenProyek: {fileID: 1393445163}
   screenDetailProyek: {fileID: 1464963796}
   screenTangkapanLayar: {fileID: 828291919}
+  screenDetailFoto: {fileID: 1210296695}
 --- !u!114 &332290745
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -467,6 +468,74 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5ef5fd0dd868ab04585b1af5089dab45, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BackButtonHandler
+--- !u!1 &1210296695
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1210296698}
+  - component: {fileID: 1210296697}
+  - component: {fileID: 1210296696}
+  m_Layer: 0
+  m_Name: Screen_DetailFoto
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!114 &1210296696
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1210296695}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 716ecac1a884ead4ab8f9c83e7d4dbfa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
+--- !u!114 &1210296697
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1210296695}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 19102, guid: 0000000000000000e000000000000000, type: 0}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.dll::UnityEngine.UIElements.UIDocument
+  m_PanelSettings: {fileID: 11400000, guid: 4bd43a4e2db6a8e4183a2022d291783d, type: 2}
+  m_ParentUI: {fileID: 0}
+  sourceAsset: {fileID: 9197481963319205126, guid: eba6d9e5968880140a02e95be21bee76, type: 3}
+  m_SortingOrder: 0
+  m_Position: 0
+  m_WorldSpaceSizeMode: 1
+  m_WorldSpaceWidth: 1920
+  m_WorldSpaceHeight: 1080
+  m_PivotReferenceSize: 0
+  m_Pivot: 0
+  m_WorldSpaceCollider: {fileID: 0}
+--- !u!4 &1210296698
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1210296695}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 217.46918, y: 1276.1836, z: 10203.075}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1310280609
 GameObject:
   m_ObjectHideFlags: 0
@@ -1044,3 +1113,4 @@ SceneRoots:
   - {fileID: 1464963797}
   - {fileID: 828291920}
   - {fileID: 835740818}
+  - {fileID: 1210296698}
