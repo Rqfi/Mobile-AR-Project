@@ -59,7 +59,7 @@ ARSession.unity
 
 ### Navigasi
 
-Stack-based navigation menggunakan `ScreenManager` dengan history stack. Hardware back button Android di-handle oleh `BackButtonHandler` yang persist antar scene via `DontDestroyOnLoad`.
+Stack-based navigation menggunakan `ScreenManager` dengan history stack.
 
 ```
 Dashboard → Katalog → Detail Furnitur → AR Session
@@ -104,7 +104,6 @@ Import file yang diperlukan:
 | Issue                               | Status      | Keterangan                                        |
 | ------------------------------------- | ------------- | --------------------------------------------------- |
 | Model 3D placeholder                | In Progress | Menunggu aset furnitur final                      |
-| Horizontal scroll nested            | Fixed       | Diatasi dengan manual pointer event handler       |
 | Fitur Proyek tidak restore AR state | By Design   | Hanya menyimpan screenshot, bukan posisi furnitur |
 | Firebase cold start delay           | Known       | Firebase butuh ~2-3 detik inisialisasi            |
 

@@ -445,20 +445,39 @@
 }
 
 .proyek-card {
-    background-color: #1E1E1E;
+    background-color: white;
     border-radius: 12px;
-    padding-left: 16px;
-    padding-right: 16px;
-    padding-top: 14px;
-    padding-bottom: 14px;
+    border-width: 1px;
+    border-color: #EBEBEB;
+    padding: 16px;
     flex-direction: row;
     align-items: center;
     cursor: link;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
+    margin-left: 10px;
+    margin-right: 10px;
 }
 
 .proyek-card:hover {
-    background-color: #2A2A2A;
+    background-color: var(--color-bg-2);
+}
+
+.proyek-card__thumb {
+    width: 300px;
+    height: 160px;
+    background-color: #FEF7E5;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border-radius: 12px;
+    margin-right: 24px;
+}
+
+.proyek-card__thumb-placeholder {
+    width: 32px;
+    height: 32px;
+    border-radius: 16px;
+    background-color: #FFC800;
 }
 
 .proyek-card__info {
@@ -466,20 +485,20 @@
 }
 
 .proyek-card__name {
-    font-size: 15px;
-    color: #FFFFFF;
+    font-size: 36px;
+    color: var(--color-primary-dark);
     -unity-font-style: bold;
 }
 
 .proyek-card__date {
-    font-size: 12px;
-    color: #737373;
+    font-size: 24px;
+    color: var(--color-primary-dark);
     margin-top: 2px;
 }
 
 .proyek-card__arrow {
-    font-size: 18px;
-    color: #737373;
+    font-size: 60px;
+    color: var(--color-primary-dark);
 }
 
 .empty-state {
@@ -500,19 +519,19 @@
 .photo-grid {
     flex-direction: row;
     flex-wrap: wrap;
-    padding-left: 16px;
+    padding-left: 24px;
     padding-right: 16px;
     row-gap: 8px;
     column-gap: 8px;
 }
 
 .photo-item {
-    background-color: #2A2A2A;
-    border-radius: 8px;
-    width: 47%;
-    height: 150px;
+    background-color: var(--color-primary-dark);
+    width: 49.4%;
+    height: 480px;
     align-items: center;
     justify-content: center;
+
 }
 
 .photo-item__icon {

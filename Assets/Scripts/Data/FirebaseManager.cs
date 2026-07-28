@@ -94,11 +94,16 @@ public class FirebaseManager : MonoBehaviour
 
             foreach (var doc in snapshot.Documents)
             {
+                string thumbPath = "";
+                try { thumbPath = doc.GetValue<string>("thumbnailPath"); }
+                catch { }
+
                 result.Add(new ProyekData
                 {
                     id = doc.Id,
                     nama = doc.GetValue<string>("nama"),
                     tanggal = doc.GetValue<string>("tanggal"),
+                    thumbnailPath = thumbPath,
                     screenshots = new List<ScreenshotData>()
                 });
             }
@@ -167,22 +172,37 @@ public class FirebaseManager : MonoBehaviour
     // ── Screenshot ─────────────────────────────────────
 
     public async Task AddScreenshotAsync(
-        string projectId,
-        string nama,
-        string catatan,
-        string localPath)
+    string projectId,
+    string nama,
+    string catatan,
+    string localPath)
     {
         try
         {
             var data = new Dictionary<string, object>
-            {
-                { "nama",      nama },
-                { "catatan",   catatan },
-                { "localPath", localPath },
-                { "tanggal",   DateTime.Now.ToString("o") }
-            };
+        {
+            { "nama",      nama },
+            { "catatan",   catatan },
+            { "localPath", localPath },
+            { "tanggal",   DateTime.Now.ToString("o") }
+        };
 
             await ScreenshotsRef(projectId).AddAsync(data);
+
+            var proyekDoc = await ProjectsRef().Document(projectId).GetSnapshotAsync();
+            string existingThumb = "";
+            try { existingThumb = proyekDoc.GetValue<string>("thumbnailPath"); }
+            catch { }
+
+            if (string.IsNullOrEmpty(existingThumb) && !string.IsNullOrEmpty(localPath))
+            {
+                await ProjectsRef().Document(projectId).UpdateAsync(
+                    new Dictionary<string, object>
+                    {
+                    { "thumbnailPath", localPath }
+                    });
+            }
+
             Debug.Log($"[Firebase] Screenshot disimpan ke proyek: {projectId}");
         }
         catch (Exception e)

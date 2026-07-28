@@ -74,6 +74,30 @@ public class ProyekScreen : MonoBehaviour
         var card = new VisualElement();
         card.AddToClassList("proyek-card");
 
+        // Thumbnail
+        var thumb = new VisualElement();
+        thumb.AddToClassList("proyek-card__thumb");
+
+        if (!string.IsNullOrEmpty(proyek.thumbnailPath) &&
+            System.IO.File.Exists(proyek.thumbnailPath))
+        {
+            // Load gambar dari local path
+            var bytes = System.IO.File.ReadAllBytes(proyek.thumbnailPath);
+            var tex = new Texture2D(2, 2);
+            tex.LoadImage(bytes);
+            thumb.style.backgroundImage = new StyleBackground(tex);
+            thumb.style.backgroundSize = new StyleBackgroundSize(
+                new BackgroundSize(BackgroundSizeType.Cover));
+        }
+        else
+        {
+            // Placeholder jika tidak ada gambar
+            var placeholder = new VisualElement();
+            placeholder.AddToClassList("proyek-card__thumb-placeholder");
+            thumb.Add(placeholder);
+        }
+
+        // Info
         var info = new VisualElement();
         info.AddToClassList("proyek-card__info");
 
@@ -86,9 +110,11 @@ public class ProyekScreen : MonoBehaviour
         info.Add(nama);
         info.Add(tanggal);
 
+        // Arrow
         var arrow = new Label("›");
         arrow.AddToClassList("proyek-card__arrow");
 
+        card.Add(thumb);
         card.Add(info);
         card.Add(arrow);
 
