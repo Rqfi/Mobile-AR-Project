@@ -3,6 +3,7 @@ using UnityEngine.UIElements;
 using UnityEngine.SceneManagement;
 using System;
 using System.Collections.Generic;
+using UnityEngine.Networking;
 
 public class DashboardScreen : MonoBehaviour
 {
@@ -39,7 +40,7 @@ public class DashboardScreen : MonoBehaviour
             }
         }
 
-        PopulateKatalogPreview();
+        LoadKatalogPreviewAsync();
         LoadProyekPreview();
     }
 
@@ -140,12 +141,21 @@ public class DashboardScreen : MonoBehaviour
 
         var thumb = new VisualElement();
         thumb.AddToClassList("preview-card__thumb");
-        var iconBox = new VisualElement();
-        iconBox.AddToClassList("preview-card__icon-box");
-        var iconInner = new VisualElement();
-        iconInner.AddToClassList("preview-card__icon-inner");
-        iconBox.Add(iconInner);
-        thumb.Add(iconBox);
+
+        // Memuat thumbnail dinamis dari Firebase jika tersedia
+        if (!string.IsNullOrEmpty(item.thumbnailUrl))
+        {
+            LoadThumbnailAsync(thumb, item.thumbnailUrl);
+        }
+        else
+        {
+            var iconBox = new VisualElement();
+            iconBox.AddToClassList("preview-card__icon-box");
+            var iconInner = new VisualElement();
+            iconInner.AddToClassList("preview-card__icon-inner");
+            iconBox.Add(iconInner);
+            thumb.Add(iconBox);
+        }
 
         var info = new VisualElement();
         info.AddToClassList("preview-card__info");
@@ -209,6 +219,73 @@ public class DashboardScreen : MonoBehaviour
         {
             Debug.LogWarning($"[DashboardScreen] LoadProyekPreview: {e.Message}");
             ShowProyekEmptyState(true);
+        }
+    }
+
+    private async void LoadKatalogPreviewAsync()
+    {
+        if (_previewKatalog == null) return;
+        _previewKatalog.Clear();
+
+        var loading = new Label("Memuat...");
+        loading.style.color = new Color(0.5f, 0.5f, 0.5f);
+        loading.style.alignSelf = Align.Center;
+        _previewKatalog.Add(loading);
+
+        // Tunggu Firebase siap
+        float timeout = 5f;
+        float elapsed = 0f;
+        while ((FirebaseManager.Instance == null || !FirebaseManager.Instance.IsReady) && elapsed < timeout)
+        {
+            await System.Threading.Tasks.Task.Delay(100);
+            elapsed += 0.1f;
+        }
+
+        if (FirebaseManager.Instance != null && FirebaseManager.Instance.IsReady)
+        {
+            // Ambil data katalog jika cache masih kosong
+            var items = FurnitureDatabase.GetAll();
+            if (items == null || items.Count == 0)
+            {
+                items = await FirebaseManager.Instance.GetKatalogAsync();
+                FurnitureDatabase.SetItems(items);
+            }
+
+            _previewKatalog.Clear();
+            int count = Mathf.Min(6, items.Count);
+            for (int i = 0; i < count; i++)
+            {
+                _previewKatalog.Add(CreatePreviewCard(items[i]));
+            }
+        }
+        else
+        {
+            _previewKatalog.Clear();
+            _previewKatalog.Add(new Label("Gagal memuat"));
+        }
+    }
+
+    private async void LoadThumbnailAsync(VisualElement element, string url)
+    {
+        try
+        {
+            using (var webRequest = UnityWebRequestTexture.GetTexture(url))
+            {
+                var operation = webRequest.SendWebRequest();
+                while (!operation.isDone)
+                    await System.Threading.Tasks.Task.Delay(50);
+
+                if (webRequest.result == UnityWebRequest.Result.Success)
+                {
+                    var tex = DownloadHandlerTexture.GetContent(webRequest);
+                    element.style.backgroundImage = new StyleBackground(tex);
+                    element.style.backgroundSize = new StyleBackgroundSize(new BackgroundSize(BackgroundSizeType.Cover));
+                }
+            }
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogWarning($"[Dashboard] Gagal load thumbnail: {e.Message}");
         }
     }
 

@@ -16,7 +16,8 @@
             style="flex: 1;">
 
             <!-- Hero Preview -->
-            <ui:VisualElement class="detail-hero">
+            <!-- 
+            <ui:VisualElement name="detail-hero" class="detail-hero">
                 <ui:VisualElement name="zoom-in"
                     style="position: absolute;
                             right: 32px;
@@ -26,6 +27,7 @@
                             background-image: url('project://database/Assets/UI/Resources/zoom-in.svg');
                             -unity-background-scale-mode: scale-to-fit;" />
             </ui:VisualElement>
+            -->
 
             <!-- Info -->
             <ui:VisualElement class="detail-body">

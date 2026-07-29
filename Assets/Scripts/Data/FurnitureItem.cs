@@ -8,6 +8,7 @@ public class FurnitureItem
     public float width;
     public float depth;
     public float height;
-    public string thumbnailPath;
-    public string modelPath;
+    public float scale;
+    public string thumbnailUrl;
+    public string modelUrl;
 }

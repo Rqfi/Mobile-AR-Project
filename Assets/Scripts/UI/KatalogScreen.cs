@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UIElements;
 using System.Collections.Generic;
+using UnityEngine.Networking;
 
 public class KatalogScreen : MonoBehaviour
 {
@@ -44,7 +45,75 @@ public class KatalogScreen : MonoBehaviour
         _searchInput?.RegisterValueChangedCallback(
             evt => RefreshGrid(evt.newValue));
 
-        RefreshGrid("");
+        LoadCatalogFromFirebase();
+    }
+
+    private async void LoadCatalogFromFirebase()
+    {
+        _grid?.Clear();
+        var loadingLabel = new Label("Memuat katalog...");
+        loadingLabel.style.alignSelf = Align.Center;
+        loadingLabel.style.marginTop = 40;
+        loadingLabel.style.color = new Color(0.5f, 0.5f, 0.5f);
+        _grid?.Add(loadingLabel);
+
+        // Tunggu Firebase Manager siap jika masih inisialisasi
+        int retries = 0;
+        while ((FirebaseManager.Instance == null || !FirebaseManager.Instance.IsReady) && retries < 100)
+        {
+            await System.Threading.Tasks.Task.Delay(100);
+            retries++;
+        }
+
+        if (FirebaseManager.Instance != null && FirebaseManager.Instance.IsReady)
+        {
+            var items = await FirebaseManager.Instance.GetKatalogAsync();
+            FurnitureDatabase.SetItems(items);
+            RefreshGrid(_searchInput?.value ?? "");
+        }
+        else
+        {
+            if (_grid != null)
+            {
+                _grid.Clear();
+                var errorLabel = new Label("Gagal terhubung ke Firebase.");
+                errorLabel.style.alignSelf = Align.Center;
+                errorLabel.style.marginTop = 40;
+                errorLabel.style.color = Color.red;
+                _grid.Add(errorLabel);
+            }
+        }
+    }
+
+    private async void LoadThumbnailAsync(VisualElement element, string url)
+    {
+        try
+        {
+            using (var webRequest = UnityWebRequestTexture.GetTexture(url))
+            {
+                var operation = webRequest.SendWebRequest();
+                while (!operation.isDone)
+                    await System.Threading.Tasks.Task.Delay(50);
+
+                if (webRequest.result == UnityWebRequest.Result.Success)
+                {
+                    var tex = DownloadHandlerTexture.GetContent(webRequest);
+                    element.style.backgroundImage = new StyleBackground(tex);
+                    element.style.backgroundSize = new StyleBackgroundSize(new BackgroundSize(BackgroundSizeType.Cover));
+                }
+                else
+                {
+                    Debug.LogWarning($"[Katalog] Gagal load thumbnail dari URL: {url}. Error: {webRequest.error}, Code: {webRequest.responseCode}");
+                    var thumbIcon = new Label("⚠");
+                    thumbIcon.AddToClassList("furniture-card__thumb-icon");
+                    element.Add(thumbIcon);
+                }
+            }
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogWarning($"[Katalog] Gagal load thumbnail: {e.Message}");
+        }
     }
 
     private void OnSearchChanged(ChangeEvent<string> evt) => RefreshGrid(evt.newValue);
@@ -152,9 +221,18 @@ public class KatalogScreen : MonoBehaviour
 
         var thumb = new VisualElement();
         thumb.AddToClassList("furniture-card__thumb");
-        var thumbIcon = new Label("◈");
-        thumbIcon.AddToClassList("furniture-card__thumb-icon");
-        thumb.Add(thumbIcon);
+
+        // Memuat thumbnail dinamis jika ada URL-nya
+        if (!string.IsNullOrEmpty(item.thumbnailUrl))
+        {
+            LoadThumbnailAsync(thumb, item.thumbnailUrl);
+        }
+        else
+        {
+            var thumbIcon = new Label("◈");
+            thumbIcon.AddToClassList("furniture-card__thumb-icon");
+            thumb.Add(thumbIcon);
+        }
 
         var info = new VisualElement();
         info.AddToClassList("furniture-card__info");

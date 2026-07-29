@@ -80,32 +80,73 @@ public class DetailFotoScreen : MonoBehaviour
         try
         {
             byte[] imageData = File.ReadAllBytes(sourcePath);
-            string tempPath = Path.Combine(Application.temporaryCachePath, filename);
-            File.WriteAllBytes(tempPath, imageData);
 
-            using var mediaScannerConnection = new AndroidJavaClass("android.media.MediaScannerConnection");
-            using var unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
-            using var activity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity");
+            using (var mediaStoreImagesMedia = new AndroidJavaClass("android.provider.MediaStore$Images$Media"))
+            {
+                using (var unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
+                {
+                    using (var activity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity"))
+                    {
+                        using (var contentResolver = activity.Call<AndroidJavaObject>("getContentResolver"))
+                        {
+                            using (var contentValues = new AndroidJavaObject("android.content.ContentValues"))
+                            {
+                                contentValues.Call("put", "title", Path.GetFileNameWithoutExtension(filename));
+                                contentValues.Call("put", "description", "MAR Project Screenshot");
+                                contentValues.Call("put", "mime_type", "image/png");
+                                contentValues.Call("put", "relative_path", "Pictures/MARProject");
 
-            mediaScannerConnection.CallStatic(
-                "scanFile",
-                activity,
-                new string[] { tempPath },
-                null,
-                null);
-
-            ShowToast("Gambar disimpan ke Galeri");
+                                var externalContentUri = mediaStoreImagesMedia.GetStatic<AndroidJavaObject>("EXTERNAL_CONTENT_URI");
+                                using (var uri = contentResolver.Call<AndroidJavaObject>("insert", externalContentUri, contentValues))
+                                {
+                                    if (uri != null)
+                                    {
+                                        using (var outputStream = contentResolver.Call<AndroidJavaObject>("openOutputStream", uri))
+                                        {
+                                            outputStream.Call("write", imageData);
+                                            outputStream.Call("close");
+                                            ShowToast("Gambar disimpan ke Galeri");
+                                        }
+                                    }
+                                    else
+                                    {
+                                        ShowToast("Gagal menyimpan ke Galeri");
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
         catch (Exception e)
         {
-            Debug.LogWarning($"[Gallery] Gagal simpan ke galeri: {e.Message}");
+            Debug.LogWarning($"[Gallery] Gagal simpan ke galeri MediaStore: {e.Message}");
             ShowToast("Gagal menyimpan ke Galeri");
         }
 #else
-        Debug.Log("[Gallery] Simpan ke galeri hanya di Android device.");
-        ShowToast("Gambar disimpan (Simulasi)");
+        // Simulasi Penyimpanan di PC (Editor)
+        try
+        {
+            string pcPicturesPath = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
+            string projectGalleryPath = Path.Combine(pcPicturesPath, "MARProject_Gallery");
+            if (!Directory.Exists(projectGalleryPath))
+                Directory.CreateDirectory(projectGalleryPath);
+
+            string destPath = Path.Combine(projectGalleryPath, filename);
+            File.Copy(sourcePath, destPath, true);
+
+            ShowToast("Gambar disimpan ke folder Pictures PC");
+            Application.OpenURL(projectGalleryPath);
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning($"[Gallery PC] Gagal: {e.Message}");
+            ShowToast("Gagal menyimpan file PC");
+        }
 #endif
     }
+
 
     private async void OnHapusGambar()
     {

@@ -303,4 +303,32 @@ public class FirebaseManager : MonoBehaviour
             throw;
         }
     }
+
+    public async Task<List<FurnitureItem>> GetKatalogAsync()
+    {
+        var result = new List<FurnitureItem>();
+        try
+        {
+            var snapshot = await _db.Collection("katalog").GetSnapshotAsync();
+            foreach (var doc in snapshot.Documents)
+            {
+                var item = new FurnitureItem { id = doc.Id };
+                try { item.name = doc.GetValue<string>("name"); } catch { item.name = "Tanpa Nama"; }
+                try { item.category = doc.GetValue<string>("category"); } catch { item.category = "Lainnya"; }
+                try { item.description = doc.GetValue<string>("description"); } catch { item.description = ""; }
+                try { item.width = doc.GetValue<float>("width"); } catch { item.width = 0f; }
+                try { item.depth = doc.GetValue<float>("depth"); } catch { item.depth = 0f; }
+                try { item.height = doc.GetValue<float>("height"); } catch { item.height = 0f; }
+                try { item.scale = doc.GetValue<float>("scale"); } catch { item.scale = 1.0f; }
+                try { item.thumbnailUrl = doc.GetValue<string>("thumbnailUrl"); } catch { item.thumbnailUrl = ""; }
+                try { item.modelUrl = doc.GetValue<string>("modelUrl"); } catch { item.modelUrl = ""; }
+                result.Add(item);
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"[Firebase] GetKatalogAsync failed: {e.Message}");
+        }
+        return result;
+    }
 }
