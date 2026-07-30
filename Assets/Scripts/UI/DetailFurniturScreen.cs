@@ -128,6 +128,8 @@ public class DetailFurniturScreen : MonoBehaviour
                 _spawnedModel.transform.SetParent(_viewerContainer.transform, false);
                 _spawnedModel.transform.localPosition = Vector3.zero;
 
+                _spawnedModel.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
+
                 float finalScale = item.scale > 0 ? item.scale : 1f;
                 _spawnedModel.transform.localScale = Vector3.one * finalScale;
 

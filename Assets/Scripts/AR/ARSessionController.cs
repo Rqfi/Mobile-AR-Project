@@ -184,6 +184,24 @@ public class ARSessionController : MonoBehaviour
             _objectSpawner.objectSpawned += OnObjectSpawned;
         }
 
+        // Hubungkan tombol Hapus
+        if (btnDelete != null)
+        {
+            btnDelete.onClick.AddListener(DeleteSelectedObject);
+        }
+
+        // Hubungkan hold event untuk tombol navigasi & rotasi
+        SetupHoldButton(btnRotateLeft, state => _isRotatingLeft = state);
+        SetupHoldButton(btnRotateRight, state => _isRotatingRight = state);
+        SetupHoldButton(btnMoveUp, state => _isMovingForward = state);
+        SetupHoldButton(btnMoveDown, state => _isMovingBackward = state);
+        SetupHoldButton(btnMoveLeft, state => _isMovingLeft = state);
+        SetupHoldButton(btnMoveRight, state => _isMovingRight = state);
+
+        // Sembunyikan panel kontrol di awal sebelum ada objek yang di-spawn
+        if (interactionPanel != null)
+            interactionPanel.SetActive(false);
+
         // Sembunyikan flash overlay
         if (flashOverlay != null)
             flashOverlay.SetActive(false);
@@ -199,6 +217,12 @@ public class ARSessionController : MonoBehaviour
 
     private void OnObjectSpawned(GameObject spawnedObject)
     {
+        _currentSelectedObject = spawnedObject;
+
+        // Tampilkan panel kontrol
+        if (interactionPanel != null)
+            interactionPanel.SetActive(true);
+
         string selectedId = AppState.SelectedFurnitureId;
         if (string.IsNullOrEmpty(selectedId))
         {
@@ -215,6 +239,7 @@ public class ARSessionController : MonoBehaviour
 
         LoadGLBModelInAR(spawnedObject, item);
     }
+
 
     private async void LoadGLBModelInAR(GameObject spawnedObject, FurnitureItem item)
     {
@@ -286,4 +311,113 @@ public class ARSessionController : MonoBehaviour
             Debug.LogError($"[ARSession] Error loading GLB in AR: {e.Message}");
         }
     }
+
+    private void DeleteSelectedObject()
+    {
+        if (_currentSelectedObject != null)
+        {
+            Destroy(_currentSelectedObject);
+            _currentSelectedObject = null;
+
+            if (interactionPanel != null)
+                interactionPanel.SetActive(false);
+        }
+    }
+
+    private void Update()
+    {
+        // 1. Deteksi sentuhan di layar untuk memilih objek lain yang sudah ditempatkan
+        if (Input.touchCount > 0)
+        {
+            Touch touch = Input.GetTouch(0);
+            if (touch.phase == TouchPhase.Began)
+            {
+                // Jangan pilih objek jika sentuhan berada di atas tombol UI
+                if (UnityEngine.EventSystems.EventSystem.current == null ||
+                    !UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject(touch.fingerId))
+                {
+                    Ray ray = Camera.main.ScreenPointToRay(touch.position);
+                    if (Physics.Raycast(ray, out RaycastHit hit))
+                    {
+                        // Cari objek parent root di bawah Spawner
+                        Transform target = hit.collider.transform;
+                        while (target.parent != null &&
+                               target.parent.name != "Object Spawner" &&
+                               target.parent.GetComponent<ObjectSpawner>() == null)
+                        {
+                            target = target.parent;
+                        }
+
+                        _currentSelectedObject = target.gameObject;
+                        if (interactionPanel != null)
+                            interactionPanel.SetActive(true);
+
+                        Debug.Log($"[ARSession] Objek terpilih: {_currentSelectedObject.name}");
+                    }
+                }
+            }
+        }
+
+        // Jika tidak ada objek terpilih, sembunyikan panel kontrol dan lewati sisa logika gerakan
+        if (_currentSelectedObject == null)
+        {
+            if (interactionPanel != null && interactionPanel.activeSelf)
+                interactionPanel.SetActive(false);
+            return;
+        }
+
+        // 2. Tangani Geser Objek (Move) Relatif Terhadap Arah Kamera HP
+        Vector3 cameraForward = Camera.main.transform.forward;
+        cameraForward.y = 0f; // Kunci sumbu Y agar gerakan tetap mendatar di lantai
+        cameraForward.Normalize();
+
+        Vector3 cameraRight = Camera.main.transform.right;
+        cameraRight.y = 0f;
+        cameraRight.Normalize();
+
+        Vector3 moveDirection = Vector3.zero;
+        if (_isMovingForward) moveDirection += cameraForward;
+        if (_isMovingBackward) moveDirection -= cameraForward;
+        if (_isMovingLeft) moveDirection -= cameraRight;
+        if (_isMovingRight) moveDirection += cameraRight;
+
+        if (moveDirection != Vector3.zero)
+        {
+            _currentSelectedObject.transform.position += moveDirection.normalized * (moveSpeed * Time.deltaTime);
+        }
+
+        // 3. Tangani Rotasi Objek (Rotate)
+        if (_isRotatingLeft)
+        {
+            _currentSelectedObject.transform.Rotate(Vector3.up, rotateSpeed * Time.deltaTime, Space.World);
+        }
+        if (_isRotatingRight)
+        {
+            _currentSelectedObject.transform.Rotate(Vector3.up, -rotateSpeed * Time.deltaTime, Space.World);
+        }
+    }
+
+    private void SetupHoldButton(Button button, Action<bool> onStateChanged)
+    {
+        if (button == null) return;
+
+        var trigger = button.gameObject.GetComponent<UnityEngine.EventSystems.EventTrigger>();
+        if (trigger == null)
+        {
+            trigger = button.gameObject.AddComponent<UnityEngine.EventSystems.EventTrigger>();
+        }
+
+        // Ketika tombol ditekan
+        var pointerDown = new UnityEngine.EventSystems.EventTrigger.Entry();
+        pointerDown.eventID = UnityEngine.EventSystems.EventTriggerType.PointerDown;
+        pointerDown.callback.AddListener((data) => { onStateChanged(true); });
+        trigger.triggers.Add(pointerDown);
+
+        // Ketika tombol dilepas
+        var pointerUp = new UnityEngine.EventSystems.EventTrigger.Entry();
+        pointerUp.eventID = UnityEngine.EventSystems.EventTriggerType.PointerUp;
+        pointerUp.callback.AddListener((data) => { onStateChanged(false); });
+        trigger.triggers.Add(pointerUp);
+    }
+
 }
