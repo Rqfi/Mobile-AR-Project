@@ -260,7 +260,12 @@ public class ARSessionController : MonoBehaviour
 
             // 3. Load GLB menggunakan glTFast
             var gltfImport = new GltfImport();
-            bool success = await gltfImport.Load(item.modelUrl);
+            string loadPath = await CacheManager.GetLocalGLBPath(item.modelUrl);
+            if (string.IsNullOrEmpty(loadPath))
+            {
+                loadPath = item.modelUrl;
+            }
+            bool success = await gltfImport.Load(loadPath);
             if (success)
             {
                 await gltfImport.InstantiateMainSceneAsync(glbContainer.transform);

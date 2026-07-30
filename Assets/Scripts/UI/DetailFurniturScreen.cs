@@ -118,7 +118,12 @@ public class DetailFurniturScreen : MonoBehaviour
 
             // 5. Unduh & Instansiasi Model GLB menggunakan glTFast
             var gltfImport = new GltfImport();
-            bool success = await gltfImport.Load(item.modelUrl);
+            string loadPath = await CacheManager.GetLocalGLBPath(item.modelUrl);
+            if (string.IsNullOrEmpty(loadPath))
+            {
+                loadPath = item.modelUrl;
+            }
+            bool success = await gltfImport.Load(loadPath);
             if (success && _viewerContainer != null)
             {
                 _spawnedModel = new GameObject("GLB_Model");
