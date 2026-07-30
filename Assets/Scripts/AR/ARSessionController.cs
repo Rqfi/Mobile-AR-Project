@@ -245,20 +245,16 @@ public class ARSessionController : MonoBehaviour
     {
         try
         {
-            // 1. Sembunyikan visual bawaan (MeshRenderer) dari spawnedObject agar tidak tumpang tindih
-            var renderers = spawnedObject.GetComponentsInChildren<Renderer>();
-            foreach (var r in renderers)
-            {
-                r.enabled = false;
-            }
+            // Tampilkan status teks loading di layar
+            ShowARLoadingStatus($"Mengunduh {item.name}...");
 
-            // 2. Buat container baru untuk GLB
+            // 1. Buat container baru untuk GLB
             GameObject glbContainer = new GameObject("GLB_Holder");
             glbContainer.transform.SetParent(spawnedObject.transform, false);
             glbContainer.transform.localPosition = Vector3.zero;
             glbContainer.transform.localRotation = Quaternion.identity;
 
-            // 3. Load GLB menggunakan glTFast
+            // 2. Load GLB menggunakan glTFast (dengan Cache Lokal)
             var gltfImport = new GltfImport();
             string loadPath = await CacheManager.GetLocalGLBPath(item.modelUrl);
             if (string.IsNullOrEmpty(loadPath))
@@ -266,53 +262,54 @@ public class ARSessionController : MonoBehaviour
                 loadPath = item.modelUrl;
             }
             bool success = await gltfImport.Load(loadPath);
+
+            // Sembunyikan status teks loading setelah selesai memuat
+            HideARLoadingStatus();
+
             if (success)
             {
                 await gltfImport.InstantiateMainSceneAsync(glbContainer.transform);
+
+                // 3. Sembunyikan visual bawaan (MeshRenderer placeholder) dari spawnedObject setelah model siap
+                var renderers = spawnedObject.GetComponentsInChildren<Renderer>();
+                foreach (var r in renderers)
+                {
+                    // Pastikan kita tidak menyembunyikan renderer dari model GLB yang baru di-instantiate
+                    if (r.transform != glbContainer.transform && !r.transform.IsChildOf(glbContainer.transform))
+                    {
+                        r.enabled = false;
+                    }
+                }
 
                 // 4. Sesuaikan skala berdasarkan item.scale dari database
                 float finalScale = item.scale > 0 ? item.scale : 1f;
                 glbContainer.transform.localScale = Vector3.one * finalScale;
 
-                // 5. Matikan animator bawaan agar tidak mengunci transform
+                // Buat BoxCollider dinamis berdasarkan ukuran model asli untuk interaktivitas
+                AddBoxColliderToModel(spawnedObject, glbContainer);
+
+                // Matikan animator bawaan model jika ada
                 var animator = glbContainer.GetComponentInChildren<Animator>();
                 if (animator != null)
                 {
                     animator.enabled = false;
                 }
-
-                // 6. Buat BoxCollider baru jika parent tidak memiliki collider agar bisa di-interact
-                var parentCollider = spawnedObject.GetComponentInChildren<Collider>();
-                if (parentCollider == null)
-                {
-                    Bounds bounds = new Bounds(glbContainer.transform.position, Vector3.zero);
-                    var glbRenderers = glbContainer.GetComponentsInChildren<Renderer>();
-                    bool hasBounds = false;
-                    foreach (var r in glbRenderers)
-                    {
-                        if (!hasBounds) { bounds = r.bounds; hasBounds = true; }
-                        else bounds.Encapsulate(r.bounds);
-                    }
-
-                    if (hasBounds)
-                    {
-                        var box = spawnedObject.AddComponent<BoxCollider>();
-                        Vector3 localCenter = spawnedObject.transform.InverseTransformPoint(bounds.center);
-                        Vector3 localSize = spawnedObject.transform.InverseTransformVector(bounds.size);
-                        box.center = localCenter;
-                        box.size = new Vector3(Mathf.Abs(localSize.x), Mathf.Abs(localSize.y), Mathf.Abs(localSize.z));
-                    }
-                }
-
-                Debug.Log($"[ARSession] Berhasil memuat model AR untuk {item.name}");
             }
             else
             {
                 Debug.LogError($"[ARSession] Gagal memuat model GLB dari URL: {item.modelUrl}");
+
+                // Jika gagal total, sembunyikan placeholder agar tidak membingungkan pengguna
+                var renderers = spawnedObject.GetComponentsInChildren<Renderer>();
+                foreach (var r in renderers)
+                {
+                    r.enabled = false;
+                }
             }
         }
         catch (Exception e)
         {
+            HideARLoadingStatus();
             Debug.LogError($"[ARSession] Error loading GLB in AR: {e.Message}");
         }
     }
@@ -399,6 +396,74 @@ public class ARSessionController : MonoBehaviour
         if (_isRotatingRight)
         {
             _currentSelectedObject.transform.Rotate(Vector3.up, -rotateSpeed * Time.deltaTime, Space.World);
+        }
+    }
+
+    private GameObject _loadingTextGo;
+
+    private void ShowARLoadingStatus(string message)
+    {
+        Canvas canvas = FindFirstObjectByType<Canvas>();
+        if (canvas == null) return;
+
+        if (_loadingTextGo == null)
+        {
+            _loadingTextGo = new GameObject("AR_LoadingStatus");
+            _loadingTextGo.transform.SetParent(canvas.transform, false);
+
+            var rect = _loadingTextGo.AddComponent<RectTransform>();
+            rect.anchoredPosition = new Vector2(0f, 150f); // Diposisikan di atas Bottom Bar
+            rect.sizeDelta = new Vector2(500f, 60f);
+
+            var text = _loadingTextGo.AddComponent<UnityEngine.UI.Text>();
+            text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            text.fontSize = 24;
+            text.alignment = TextAnchor.MiddleCenter;
+            text.color = Color.white;
+
+            var outline = _loadingTextGo.AddComponent<UnityEngine.UI.Outline>();
+            outline.effectColor = Color.black;
+            outline.effectDistance = new Vector2(1.5f, 1.5f);
+        }
+
+        var uiText = _loadingTextGo.GetComponent<UnityEngine.UI.Text>();
+        if (uiText != null)
+        {
+            uiText.text = message;
+            _loadingTextGo.SetActive(true);
+        }
+    }
+
+    private void HideARLoadingStatus()
+    {
+        if (_loadingTextGo != null)
+        {
+            _loadingTextGo.SetActive(false);
+        }
+    }
+
+    private void AddBoxColliderToModel(GameObject spawnedObject, GameObject glbContainer)
+    {
+        var parentCollider = spawnedObject.GetComponentInChildren<Collider>();
+        if (parentCollider == null)
+        {
+            Bounds bounds = new Bounds(glbContainer.transform.position, Vector3.zero);
+            var glbRenderers = glbContainer.GetComponentsInChildren<Renderer>();
+            bool hasBounds = false;
+            foreach (var r in glbRenderers)
+            {
+                if (!hasBounds) { bounds = r.bounds; hasBounds = true; }
+                else bounds.Encapsulate(r.bounds);
+            }
+
+            if (hasBounds)
+            {
+                var box = spawnedObject.AddComponent<BoxCollider>();
+                Vector3 localCenter = spawnedObject.transform.InverseTransformPoint(bounds.center);
+                Vector3 localSize = spawnedObject.transform.InverseTransformVector(bounds.size);
+                box.center = localCenter;
+                box.size = new Vector3(Mathf.Abs(localSize.x), Mathf.Abs(localSize.y), Mathf.Abs(localSize.z));
+            }
         }
     }
 

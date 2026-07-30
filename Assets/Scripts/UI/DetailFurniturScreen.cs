@@ -117,6 +117,17 @@ public class DetailFurniturScreen : MonoBehaviour
             }
 
             // 5. Unduh & Instansiasi Model GLB menggunakan glTFast
+            Label loadingLabel = new Label("Memuat Model 3D...");
+            loadingLabel.name = "detail-loading";
+            loadingLabel.style.color = new StyleColor(new Color(0.2f, 0.2f, 0.2f));
+            loadingLabel.style.fontSize = 24f;
+            loadingLabel.style.unityTextAlign = TextAnchor.MiddleCenter;
+            loadingLabel.style.alignSelf = Align.Center;
+            loadingLabel.style.flexGrow = 1;
+            if (_heroContainer != null)
+            {
+                _heroContainer.Add(loadingLabel);
+            }
             var gltfImport = new GltfImport();
             string loadPath = await CacheManager.GetLocalGLBPath(item.modelUrl);
             if (string.IsNullOrEmpty(loadPath))
@@ -124,6 +135,10 @@ public class DetailFurniturScreen : MonoBehaviour
                 loadPath = item.modelUrl;
             }
             bool success = await gltfImport.Load(loadPath);
+            if (_heroContainer != null && loadingLabel != null)
+            {
+                _heroContainer.Remove(loadingLabel);
+            }
             if (success && _viewerContainer != null)
             {
                 _spawnedModel = new GameObject("GLB_Model");
