@@ -32,6 +32,7 @@ function App() {
   const [authReady, setAuthReady] = useState(false);
   const [toasts, setToasts] = useState([]);
   const [editingItem, setEditingItem] = useState(null);
+  const [previewItem, setPreviewItem] = useState(null);
 
   // State Form Input (Menggunakan URL String)
   const [name, setName] = useState('');
@@ -277,10 +278,11 @@ function App() {
 
           <div className="form-group">
             <label>URL Link Gambar Thumbnail</label>
+            <label>https://raw.githubusercontent.com/...</label>
             <input
               type="url"
               className="form-control"
-              placeholder="https://example.com/gambar.png"
+              placeholder="https://raw.githubusercontent.com/.../gambar.png"
               value={thumbnailUrl}
               onChange={(e) => setThumbnailUrl(e.target.value)}
               required
@@ -289,10 +291,11 @@ function App() {
 
           <div className="form-group">
             <label>URL Link Model 3D (.glb)</label>
+            <label>https://raw.githubusercontent.com/...</label>
             <input
               type="url"
               className="form-control"
-              placeholder="https://example.com/model.glb"
+              placeholder="https://raw.githubusercontent.com/.../model.glb"
               value={modelUrl}
               onChange={(e) => setModelUrl(e.target.value)}
               required
@@ -300,7 +303,7 @@ function App() {
           </div>
 
           <div style={{ display: 'flex', gap: '10px' }}>
-            <button type="submit" className="btn" disabled={loading} style={{ flex: 1 }}>
+            <button type="submit" className="btn" disabled={loading}>
               {loading ? "Menyimpan..." : (editingItem ? "Perbarui Item" : "Simpan ke Katalog")}
             </button>
             {editingItem && (
@@ -308,7 +311,7 @@ function App() {
                 type="button"
                 onClick={handleCancelEdit}
                 className="btn"
-                style={{ backgroundColor: '#6b7280', flex: '0 0 auto' }}
+                style={{ backgroundColor: '#b5b5c2ff' }}
               >
                 Batal Edit
               </button>
@@ -320,7 +323,7 @@ function App() {
 
       {/* Daftar Katalog */}
       <div className="catalog-container">
-        <div className="card" style={{ width: '100%' }}>
+        <div className="card" style={{ width: '95%' }}>
           <h2>Daftar Katalog Furnitur ({items.length})</h2>
           <div className="catalog-list">
             {items.map((item) => (
@@ -340,37 +343,56 @@ function App() {
                     <span>D: {item.depth}cm</span>
                     <span>T: {item.height}cm</span>
                   </div>
-                  <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '10px' }}>
                     <button
-                      onClick={() => handleStartEdit(item)}
+                      onClick={() => setPreviewItem(item)}
                       className="btn"
                       style={{
                         margin: 0,
                         padding: '8px',
                         fontSize: '12px',
                         borderRadius: '6px',
-                        backgroundColor: 'transparent',
-                        color: 'var(--color-primary)',
-                        border: '1px solid var(--color-primary)',
-                      }}
-                      onMouseEnter={(e) => {
-                        e.target.style.backgroundColor = 'var(--color-primary)';
-                        e.target.style.color = '#000';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.target.style.backgroundColor = 'transparent';
-                        e.target.style.color = 'var(--color-primary)';
+                        backgroundColor: 'var(--color-primary)',
+                        color: '#000',
+                        border: 'none',
+                        fontWeight: '600',
                       }}
                     >
-                      Edit Item
+                      Preview 3D
                     </button>
-                    <button
-                      onClick={() => handleDelete(item)}
-                      className="btn-delete"
-                      style={{ padding: '8px', fontSize: '12px', borderRadius: '6px' }}
-                    >
-                      Hapus Item
-                    </button>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        onClick={() => handleStartEdit(item)}
+                        className="btn"
+                        style={{
+                          margin: 0,
+                          padding: '8px',
+                          fontSize: '12px',
+                          borderRadius: '6px',
+                          backgroundColor: 'transparent',
+                          color: 'var(--color-primary)',
+                          border: '1px solid var(--color-primary)',
+                          flex: 1,
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.backgroundColor = 'var(--color-primary)';
+                          e.target.style.color = '#000';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.backgroundColor = 'transparent';
+                          e.target.style.color = 'var(--color-primary)';
+                        }}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(item)}
+                        className="btn-delete"
+                        style={{ padding: '8px', fontSize: '12px', borderRadius: '6px', flex: 1 }}
+                      >
+                        Hapus
+                      </button>
+                    </div>
                   </div>
 
                 </div>
@@ -384,6 +406,99 @@ function App() {
           </div>
         </div>
       </div>
+
+      {/* 3D Viewer Modal */}
+      {previewItem && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          zIndex: 9999,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          backdropFilter: 'blur(8px)',
+          padding: '20px'
+        }}>
+          <div style={{
+            backgroundColor: 'var(--color-surface)',
+            borderRadius: '16px',
+            border: '2px solid var(--color-primary)',
+            padding: '24px',
+            width: '100%',
+            maxWidth: '640px',
+            position: 'relative',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.3)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px',
+            boxSizing: 'border-box'
+          }}>
+            {/* Header Modal */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '1.25rem', color: 'var(--color-text)' }}>3D Viewer: {previewItem.name}</h3>
+                <span style={{ fontSize: '0.8rem', color: 'var(--color-primary)', fontWeight: 'bold' }}>{previewItem.category} (Visual Scale: {previewItem.scale})</span>
+              </div>
+              <button
+                onClick={() => setPreviewItem(null)}
+                style={{
+                  backgroundColor: 'transparent',
+                  color: 'var(--color-text)',
+                  border: 'none',
+                  fontSize: '1.5rem',
+                  cursor: 'pointer',
+                  padding: '4px 8px',
+                  borderRadius: '50%',
+                  lineHeight: '1'
+                }}
+              >
+                &times;
+              </button>
+            </div>
+            {/* Model 3D Container */}
+            <div style={{
+              width: '100%',
+              height: '380px',
+              backgroundColor: '#e7e7e7',
+              borderRadius: '8px',
+              overflow: 'hidden',
+              border: '1px solid var(--color-border)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxSizing: 'border-box'
+            }}>
+              <model-viewer
+                src={previewItem.modelUrl}
+                alt={`3D Model: ${previewItem.name}`}
+                auto-rotate
+                camera-controls
+                interaction-prompt="none"
+                shadow-intensity="1.5"
+                environment-image="neutral"
+                exposure="1.0"
+                style={{ width: '100%', height: '100%', outline: 'none' }}
+              >
+              </model-viewer>
+            </div>
+            {/* Deskripsi & Detail Ukuran */}
+            <div style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', lineHeight: '1.5' }}>
+              <div style={{ marginBottom: '8px' }}>
+                <strong>Deskripsi:</strong> {previewItem.description || "Tidak ada deskripsi."}
+              </div>
+              <div style={{ display: 'flex', gap: '16px', fontWeight: '600', backgroundColor: 'var(--color-bg)', padding: '8px 12px', borderRadius: '6px', border: '1px solid rgba(255, 200, 0, 0.1)' }}>
+                <span>L: {previewItem.width} cm</span>
+                <span>D: {previewItem.depth} cm</span>
+                <span>T: {previewItem.height} cm</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Toast Notification Container */}
       <div className="toast-container">

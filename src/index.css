@@ -1,12 +1,12 @@
 :root {
-  --color-bg: #0b0b0f;
-  --color-surface: #13131a;
-  --color-surface-hover: #1c1c24;
+  --color-bg: #FAF9F9;
+  --color-surface: #FFFAE7;
+  --color-surface-hover: #FEF7E5;
   --color-primary: #FFC800;
   --color-primary-hover: #E0B000;
-  --color-text: #FFFFFF;
-  --color-text-muted: #8e8e9f;
-  --color-border: #22222e;
+  --color-text: #2c2c2c;
+  --color-text-muted: #2c2c2c;
+  --color-border: #FFC800;
   --color-danger: #ff4d4d;
   --color-success: #00e676;
   --radius: 16px;
@@ -15,18 +15,13 @@
 }
 
 body {
-  margin: 0;
-  padding: 40px 20px;
+  margin: 20px;
   background-color: var(--color-bg);
   color: var(--color-text);
   min-height: 100vh;
-  display: flex;
-  justify-content: center;
 }
 
 .container {
-  width: 100%;
-  max-width: 1200px;
   display: grid;
   grid-template-columns: 380px 1fr;
   gap: 30px;
@@ -55,7 +50,7 @@ h2 {
   background-color: var(--color-surface);
   border-radius: var(--radius);
   padding: 30px;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.5);
   border: 1px solid var(--color-border);
 }
 
@@ -127,6 +122,7 @@ h2 {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  width: 100%;
 }
 
 .catalog-list {
@@ -240,8 +236,8 @@ h2 {
   color: var(--color-text);
   padding: 14px 20px;
   border-radius: 8px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-  border-left: 4px solid var(--color-primary);
+  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.4);
+  border: 2px solid var(--color-primary);
   font-size: 14px;
   display: flex;
   align-items: center;
@@ -250,11 +246,11 @@ h2 {
 }
 
 .toast.success {
-  border-left-color: var(--color-success);
+  border-color: var(--color-success);
 }
 
 .toast.error {
-  border-left-color: var(--color-danger);
+  border-color: var(--color-danger);
 }
 
 @keyframes slideIn {
