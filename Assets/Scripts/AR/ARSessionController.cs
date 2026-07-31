@@ -7,6 +7,7 @@ using UnityEngine.SceneManagement;
 using TMPro;
 using UnityEngine.XR.Interaction.Toolkit.Samples.StarterAssets;
 using GLTFast;
+using UnityEngine.InputSystem;
 
 public class ARSessionController : MonoBehaviour
 {
@@ -30,6 +31,7 @@ public class ARSessionController : MonoBehaviour
     [SerializeField] private float rotateSpeed = 60f;  // Kecepatan rotasi objek (derajat per detik)
 
     private GameObject _currentSelectedObject;
+    private GameObject _selectionIndicator;
 
     // Status hold tombol
     private bool _isRotatingLeft;
@@ -205,6 +207,8 @@ public class ARSessionController : MonoBehaviour
         // Sembunyikan flash overlay
         if (flashOverlay != null)
             flashOverlay.SetActive(false);
+
+        CreateSelectionIndicator();
     }
 
     private void OnDestroy()
@@ -282,8 +286,7 @@ public class ARSessionController : MonoBehaviour
                 }
 
                 // 4. Sesuaikan skala berdasarkan item.scale dari database
-                float finalScale = item.scale > 0 ? item.scale : 1f;
-                glbContainer.transform.localScale = Vector3.one * finalScale;
+                ScaleModelToRealWorldSize(glbContainer, item);
 
                 // Buat BoxCollider dinamis berdasarkan ukuran model asli untuk interaktivitas
                 AddBoxColliderToModel(spawnedObject, glbContainer);
@@ -314,6 +317,62 @@ public class ARSessionController : MonoBehaviour
         }
     }
 
+    private void ScaleModelToRealWorldSize(GameObject glbContainer, FurnitureItem item)
+    {
+        // Simpan rotasi parent lalu reset sementara agar bounds konsisten
+        Transform parentTransform = glbContainer.transform.parent;
+        Quaternion originalRotation = parentTransform != null ? parentTransform.rotation : Quaternion.identity;
+        if (parentTransform != null)
+            parentTransform.rotation = Quaternion.identity;
+
+        // Hitung bounding box dari seluruh renderer di model GLB
+        Bounds bounds = new Bounds(Vector3.zero, Vector3.zero);
+        var renderers = glbContainer.GetComponentsInChildren<Renderer>();
+        bool hasBounds = false;
+
+        foreach (var r in renderers)
+        {
+            if (!hasBounds)
+            {
+                bounds = r.bounds;
+                hasBounds = true;
+            }
+            else
+            {
+                bounds.Encapsulate(r.bounds);
+            }
+        }
+
+        // Kembalikan rotasi parent
+        if (parentTransform != null)
+            parentTransform.rotation = originalRotation;
+
+        if (!hasBounds || bounds.size == Vector3.zero)
+        {
+            Debug.LogWarning("[ARSession] Tidak bisa menghitung bounds model, gunakan scale default.");
+            float fallback = item.scale > 0 ? item.scale : 1f;
+            glbContainer.transform.localScale = Vector3.one * fallback;
+            return;
+        }
+
+        // Ukuran model saat ini (konsisten karena dihitung tanpa rotasi)
+        Vector3 modelSize = bounds.size;
+
+        // Ukuran target dari database (cm → meter)
+        float targetWidth = item.width / 100f;
+        float targetHeight = item.height / 100f;
+        float targetDepth = item.depth / 100f;
+
+        // Hitung faktor skala per axis
+        float scaleX = targetWidth / modelSize.x;
+        float scaleY = targetHeight / modelSize.y;
+        float scaleZ = targetDepth / modelSize.z;
+
+        glbContainer.transform.localScale = new Vector3(scaleX, scaleY, scaleZ);
+
+        Debug.Log($"[ARSession] Model bounds: {modelSize}, Target (m): ({targetWidth}, {targetHeight}, {targetDepth}), Scale: ({scaleX}, {scaleY}, {scaleZ})");
+    }
+
     private void DeleteSelectedObject()
     {
         if (_currentSelectedObject != null)
@@ -326,39 +385,107 @@ public class ARSessionController : MonoBehaviour
         }
     }
 
+    private void CreateSelectionIndicator()
+    {
+        if (_selectionIndicator != null) return;
+
+        _selectionIndicator = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+        _selectionIndicator.name = "SelectionIndicator";
+
+        // Hapus collider agar tidak mengganggu raycast
+        var col = _selectionIndicator.GetComponent<Collider>();
+        if (col != null) Destroy(col);
+
+        // Buat sangat tipis (flat disc)
+        _selectionIndicator.transform.localScale = new Vector3(0.1f, 0.002f, 0.1f);
+
+        // Material semi-transparan kuning/emas
+        var renderer = _selectionIndicator.GetComponent<Renderer>();
+        var mat = new Material(Shader.Find("Sprites/Default"));
+        mat.color = new Color(1f, 0.8f, 0f, 0.4f);
+        renderer.material = mat;
+
+        _selectionIndicator.SetActive(false);
+    }
+
+    private void UpdateSelectionIndicator()
+    {
+        if (_selectionIndicator == null) return;
+
+        if (_currentSelectedObject == null)
+        {
+            _selectionIndicator.SetActive(false);
+            return;
+        }
+
+        // Hitung bounds dari seluruh renderer di objek terpilih
+        var allRenderers = _currentSelectedObject.GetComponentsInChildren<Renderer>();
+        var renderers = System.Array.FindAll(allRenderers, r => r.enabled);
+        if (renderers.Length == 0)
+        {
+            _selectionIndicator.SetActive(false);
+            return;
+        }
+
+        Bounds bounds = renderers[0].bounds;
+        for (int i = 1; i < renderers.Length; i++)
+        {
+            bounds.Encapsulate(renderers[i].bounds);
+        }
+
+        // Posisikan di bawah tengah objek
+        Vector3 indicatorPos = new Vector3(bounds.center.x, bounds.min.y + 0.001f, bounds.center.z);
+        _selectionIndicator.transform.position = indicatorPos;
+
+        // Skala sesuai lebar/kedalaman objek (sedikit lebih besar)
+        float diameter = Mathf.Max(bounds.size.x, bounds.size.z) * 1.2f;
+        _selectionIndicator.transform.localScale = new Vector3(diameter, 0.002f, diameter);
+
+        _selectionIndicator.SetActive(true);
+    }
+
     private void Update()
     {
-        // 1. Deteksi sentuhan di layar untuk memilih objek lain yang sudah ditempatkan
-        if (Input.touchCount > 0)
+        // 1. Deteksi sentuhan menggunakan New Input System
+        if (Pointer.current != null && Pointer.current.press.wasPressedThisFrame)
         {
-            Touch touch = Input.GetTouch(0);
-            if (touch.phase == TouchPhase.Began)
+            Vector2 screenPos = Pointer.current.position.ReadValue();
+
+            bool isOverUI = UnityEngine.EventSystems.EventSystem.current != null &&
+                UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject();
+
+            Debug.Log($"[ARSession] Touch detected! pos={screenPos}, OverUI={isOverUI}");
+
+            if (!isOverUI)
             {
-                // Jangan pilih objek jika sentuhan berada di atas tombol UI
-                if (UnityEngine.EventSystems.EventSystem.current == null ||
-                    !UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject(touch.fingerId))
+                Ray ray = Camera.main.ScreenPointToRay(screenPos);
+                if (Physics.Raycast(ray, out RaycastHit hit))
                 {
-                    Ray ray = Camera.main.ScreenPointToRay(touch.position);
-                    if (Physics.Raycast(ray, out RaycastHit hit))
+                    Debug.Log($"[ARSession] Raycast HIT: {hit.collider.gameObject.name}, parent: {hit.collider.transform.parent?.name}");
+
+                    // Cari objek parent root di bawah Spawner
+                    Transform target = hit.collider.transform;
+                    while (target.parent != null &&
+                           target.parent.name != "Object Spawner" &&
+                           target.parent.GetComponent<ObjectSpawner>() == null)
                     {
-                        // Cari objek parent root di bawah Spawner
-                        Transform target = hit.collider.transform;
-                        while (target.parent != null &&
-                               target.parent.name != "Object Spawner" &&
-                               target.parent.GetComponent<ObjectSpawner>() == null)
-                        {
-                            target = target.parent;
-                        }
-
-                        _currentSelectedObject = target.gameObject;
-                        if (interactionPanel != null)
-                            interactionPanel.SetActive(true);
-
-                        Debug.Log($"[ARSession] Objek terpilih: {_currentSelectedObject.name}");
+                        target = target.parent;
                     }
+
+                    _currentSelectedObject = target.gameObject;
+                    if (interactionPanel != null)
+                        interactionPanel.SetActive(true);
+
+                    Debug.Log($"[ARSession] Objek terpilih: {_currentSelectedObject.name}");
+                }
+                else
+                {
+                    Debug.Log("[ARSession] Raycast MISS - tidak mengenai collider apapun");
                 }
             }
         }
+
+        UpdateSelectionIndicator();
 
         // Jika tidak ada objek terpilih, sembunyikan panel kontrol dan lewati sisa logika gerakan
         if (_currentSelectedObject == null)
@@ -444,26 +571,27 @@ public class ARSessionController : MonoBehaviour
 
     private void AddBoxColliderToModel(GameObject spawnedObject, GameObject glbContainer)
     {
-        var parentCollider = spawnedObject.GetComponentInChildren<Collider>();
-        if (parentCollider == null)
-        {
-            Bounds bounds = new Bounds(glbContainer.transform.position, Vector3.zero);
-            var glbRenderers = glbContainer.GetComponentsInChildren<Renderer>();
-            bool hasBounds = false;
-            foreach (var r in glbRenderers)
-            {
-                if (!hasBounds) { bounds = r.bounds; hasBounds = true; }
-                else bounds.Encapsulate(r.bounds);
-            }
+        // Hapus BoxCollider lama di parent saja (jika ada), jangan sentuh collider child
+        var existingBox = spawnedObject.GetComponent<BoxCollider>();
+        if (existingBox != null)
+            Destroy(existingBox);
 
-            if (hasBounds)
-            {
-                var box = spawnedObject.AddComponent<BoxCollider>();
-                Vector3 localCenter = spawnedObject.transform.InverseTransformPoint(bounds.center);
-                Vector3 localSize = spawnedObject.transform.InverseTransformVector(bounds.size);
-                box.center = localCenter;
-                box.size = new Vector3(Mathf.Abs(localSize.x), Mathf.Abs(localSize.y), Mathf.Abs(localSize.z));
-            }
+        Bounds bounds = new Bounds(glbContainer.transform.position, Vector3.zero);
+        var glbRenderers = glbContainer.GetComponentsInChildren<Renderer>();
+        bool hasBounds = false;
+        foreach (var r in glbRenderers)
+        {
+            if (!hasBounds) { bounds = r.bounds; hasBounds = true; }
+            else bounds.Encapsulate(r.bounds);
+        }
+
+        if (hasBounds)
+        {
+            var box = spawnedObject.AddComponent<BoxCollider>();
+            Vector3 localCenter = spawnedObject.transform.InverseTransformPoint(bounds.center);
+            Vector3 localSize = spawnedObject.transform.InverseTransformVector(bounds.size);
+            box.center = localCenter;
+            box.size = new Vector3(Mathf.Abs(localSize.x), Mathf.Abs(localSize.y), Mathf.Abs(localSize.z));
         }
     }
 
