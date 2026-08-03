@@ -1,7 +1,4 @@
-# Console — Admin Panel Katalog Furnitur AR
-
-> Branch: `console`
-> Bagian dari proyek Tugas Akhir — **Aplikasi AR Penempatan Furnitur**
+# Admin Panel Katalog Furnitur AR
 
 Konsol ini adalah web berbasis **React** yang berfungsi sebagai panel admin untuk mengelola data katalog furnitur (item 3D) yang disimpan di **Firebase Firestore**. Data yang dikelola di sini adalah sumber data yang dibaca oleh aplikasi Unity AR.
 
@@ -113,4 +110,4 @@ Konsol direncanakan menambahkan autentikasi email/password atau Google Sign-In d
 
 ### Relasi dengan Aplikasi Unity
 
-Data di collection `katalog` adalah sumber untuk item furnitur. Kelas `FurnitureDatabase.cs` di branch utama Unity saat ini masih menggunakan data statis lokal — integrasi untuk membaca dari Firestore adalah langkah selanjutnya dalam pengembangan.
+Data di collection `katalog` adalah sumber untuk item furnitur. Kelas `FurnitureDatabase.cs` di branch utama Unity saat ini masih menggunakan data statis lokal, integrasi untuk membaca dari Firestore adalah langkah selanjutnya dalam pengembangan.
