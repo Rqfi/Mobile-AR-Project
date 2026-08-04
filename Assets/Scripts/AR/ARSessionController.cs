@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.IO;
+using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
@@ -8,6 +9,9 @@ using TMPro;
 using UnityEngine.XR.Interaction.Toolkit.Samples.StarterAssets;
 using GLTFast;
 using UnityEngine.InputSystem;
+using UnityEngine.Rendering.Universal;
+using UnityEngine.Rendering;
+using GLTFast.Materials;
 
 public class ARSessionController : MonoBehaviour
 {
@@ -259,7 +263,9 @@ public class ARSessionController : MonoBehaviour
             glbContainer.transform.localRotation = Quaternion.identity;
 
             // 2. Load GLB menggunakan glTFast (dengan Cache Lokal)
-            var gltfImport = new GltfImport();
+            var urpAsset = GraphicsSettings.currentRenderPipeline as UniversalRenderPipelineAsset;
+            var gltfImport = new GltfImport(materialGenerator: new UniversalRPMaterialGenerator(urpAsset));
+
             string loadPath = await CacheManager.GetLocalGLBPath(item.modelUrl);
             if (string.IsNullOrEmpty(loadPath))
             {
@@ -286,7 +292,7 @@ public class ARSessionController : MonoBehaviour
                 }
 
                 // 4. Sesuaikan skala berdasarkan item.scale dari database
-                ScaleModelToRealWorldSize(glbContainer, item);
+                await ScaleModelToRealWorldSizeAsync(glbContainer, item);
 
                 // Buat BoxCollider dinamis berdasarkan ukuran model asli untuk interaktivitas
                 AddBoxColliderToModel(spawnedObject, glbContainer);
@@ -317,60 +323,99 @@ public class ARSessionController : MonoBehaviour
         }
     }
 
-    private void ScaleModelToRealWorldSize(GameObject glbContainer, FurnitureItem item)
+    private async Task ScaleModelToRealWorldSizeAsync(GameObject glbContainer, FurnitureItem item)
     {
-        // Simpan rotasi parent lalu reset sementara agar bounds konsisten
-        Transform parentTransform = glbContainer.transform.parent;
-        Quaternion originalRotation = parentTransform != null ? parentTransform.rotation : Quaternion.identity;
-        if (parentTransform != null)
-            parentTransform.rotation = Quaternion.identity;
-
-        // Hitung bounding box dari seluruh renderer di model GLB
-        Bounds bounds = new Bounds(Vector3.zero, Vector3.zero);
-        var renderers = glbContainer.GetComponentsInChildren<Renderer>();
+        Bounds bounds = default;
         bool hasBounds = false;
+        int rendererCount = 0;
 
-        foreach (var r in renderers)
+        for (int attempt = 0; attempt < 20; attempt++)
         {
-            if (!hasBounds)
+            await Task.Delay(100);
+            if (glbContainer == null) return;
+
+            Transform parentTransform = glbContainer.transform.parent;
+            Quaternion originalRotation = parentTransform != null ? parentTransform.rotation : Quaternion.identity;
+            if (parentTransform != null)
+                parentTransform.rotation = Quaternion.identity;
+
+            var renderers = glbContainer.GetComponentsInChildren<Renderer>();
+            rendererCount = renderers.Length;
+            hasBounds = false;
+
+            // FIX: Paksa kalkulasi ulang bounds mesh. 
+            // Beberapa model GLB (terutama yang diekspor dari Blender tanpa setelan yang tepat) 
+            // tidak memiliki metadata bounds, membuat bounds.size bernilai (0,0,0) meskipun objeknya terlihat.
+            var meshFilters = glbContainer.GetComponentsInChildren<MeshFilter>();
+            foreach (var mf in meshFilters)
             {
-                bounds = r.bounds;
-                hasBounds = true;
+                if (mf.sharedMesh != null) mf.sharedMesh.RecalculateBounds();
             }
-            else
+
+            var skinnedMeshes = glbContainer.GetComponentsInChildren<SkinnedMeshRenderer>();
+            foreach (var smr in skinnedMeshes)
             {
-                bounds.Encapsulate(r.bounds);
+                if (smr.sharedMesh != null)
+                {
+                    smr.sharedMesh.RecalculateBounds();
+                    smr.localBounds = smr.sharedMesh.bounds;
+                }
+            }
+
+            foreach (var r in renderers)
+            {
+                if (r.bounds.size == Vector3.zero) continue;
+
+                if (!hasBounds)
+                {
+                    bounds = r.bounds;
+                    hasBounds = true;
+                }
+                else
+                {
+                    bounds.Encapsulate(r.bounds);
+                }
+            }
+
+            if (parentTransform != null)
+                parentTransform.rotation = originalRotation;
+
+            if (hasBounds && bounds.size != Vector3.zero)
+            {
+                break;
             }
         }
 
-        // Kembalikan rotasi parent
-        if (parentTransform != null)
-            parentTransform.rotation = originalRotation;
-
         if (!hasBounds || bounds.size == Vector3.zero)
         {
-            Debug.LogWarning("[ARSession] Tidak bisa menghitung bounds model, gunakan scale default.");
+            Debug.LogWarning($"[ARSession] GAGAL BACA UKURAN. Renderer ditemukan: {rendererCount}. Objek mungkin rusak/kosong.");
+            
             float fallback = item.scale > 0 ? item.scale : 1f;
             glbContainer.transform.localScale = Vector3.one * fallback;
             return;
         }
 
-        // Ukuran model saat ini (konsisten karena dihitung tanpa rotasi)
         Vector3 modelSize = bounds.size;
-
-        // Ukuran target dari database (cm → meter)
         float targetWidth = item.width / 100f;
         float targetHeight = item.height / 100f;
         float targetDepth = item.depth / 100f;
 
-        // Hitung faktor skala per axis
+        // Amankan dari pembagian nol
+        if (modelSize.x == 0) modelSize.x = 0.01f;
+        if (modelSize.y == 0) modelSize.y = 0.01f;
+        if (modelSize.z == 0) modelSize.z = 0.01f;
+
         float scaleX = targetWidth / modelSize.x;
         float scaleY = targetHeight / modelSize.y;
         float scaleZ = targetDepth / modelSize.z;
 
-        glbContainer.transform.localScale = new Vector3(scaleX, scaleY, scaleZ);
+        // Pakai skala terkecil/proporsional jika model tidak kubus sempurna (menjaga rasio bentuk asli)
+        float finalScale = Mathf.Min(scaleX, Mathf.Min(scaleY, scaleZ));
 
-        Debug.Log($"[ARSession] Model bounds: {modelSize}, Target (m): ({targetWidth}, {targetHeight}, {targetDepth}), Scale: ({scaleX}, {scaleY}, {scaleZ})");
+        // Atur skala
+        glbContainer.transform.localScale = new Vector3(finalScale, finalScale, finalScale);
+
+        Debug.Log($"[ARSession] Sukses set skala. Asli: {modelSize:F2}, Target: {targetWidth:F2}x{targetHeight:F2}x{targetDepth:F2}, Skala final: {finalScale:F3}");
     }
 
     private void DeleteSelectedObject()
@@ -465,21 +510,43 @@ public class ARSessionController : MonoBehaviour
 
                     // Cari objek parent root di bawah Spawner
                     Transform target = hit.collider.transform;
-                    while (target.parent != null &&
-                           target.parent.name != "Object Spawner" &&
-                           target.parent.GetComponent<ObjectSpawner>() == null)
+                    bool isFurniture = false;
+
+                    while (target.parent != null)
                     {
+                        if (target.parent.name == "Object Spawner" || target.parent.GetComponent<ObjectSpawner>() != null)
+                        {
+                            isFurniture = true;
+                            break;
+                        }
                         target = target.parent;
                     }
 
-                    _currentSelectedObject = target.gameObject;
-                    if (interactionPanel != null)
-                        interactionPanel.SetActive(true);
+                    if (isFurniture)
+                    {
+                        _currentSelectedObject = target.gameObject;
+                        if (interactionPanel != null)
+                            interactionPanel.SetActive(true);
 
-                    Debug.Log($"[ARSession] Objek terpilih: {_currentSelectedObject.name}");
+                        Debug.Log($"[ARSession] Objek terpilih: {_currentSelectedObject.name}");
+                    }
+                    else
+                    {
+                        // Jika klik di luar furnitur (misal: di lantai AR Plane), hilangkan seleksi
+                        _currentSelectedObject = null;
+                        if (interactionPanel != null)
+                            interactionPanel.SetActive(false);
+
+                        Debug.Log("[ARSession] Raycast MISS - Klik pada lantai/AR Plane");
+                    }
                 }
                 else
                 {
+                    // Tidak kena apa-apa
+                    _currentSelectedObject = null;
+                    if (interactionPanel != null)
+                        interactionPanel.SetActive(false);
+
                     Debug.Log("[ARSession] Raycast MISS - tidak mengenai collider apapun");
                 }
             }

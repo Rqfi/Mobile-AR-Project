@@ -4,6 +4,9 @@ using UnityEngine.SceneManagement;
 using System;
 using System.Threading.Tasks;
 using GLTFast;
+using GLTFast.Materials;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 
 public class DetailFurniturScreen : MonoBehaviour
 {
@@ -78,41 +81,45 @@ public class DetailFurniturScreen : MonoBehaviour
 
         try
         {
-            // 1. Buat kontainer di posisi terisolasi
             _viewerContainer = new GameObject("3DViewer_Container");
             _viewerContainer.transform.position = new Vector3(1000f, 1000f, 1000f);
 
-            // 2. Buat Kamera Khusus
             var camGo = new GameObject("3DViewer_Camera");
             camGo.transform.SetParent(_viewerContainer.transform);
-            camGo.transform.localPosition = new Vector3(0f, 0.8f, -2.5f);
+            camGo.transform.localPosition = new Vector3(0f, 0.8f, -3.5f);
             camGo.transform.LookAt(_viewerContainer.transform.position + Vector3.up * 0.3f);
             _viewerCamera = camGo.AddComponent<Camera>();
             _viewerCamera.clearFlags = CameraClearFlags.SolidColor;
-            // Menyesuaikan warna latar belakang dengan tema UXML (#FEF7E5)
             _viewerCamera.backgroundColor = new Color(0.996f, 0.969f, 0.898f);
             _viewerCamera.fieldOfView = 45f;
             _viewerCamera.nearClipPlane = 0.1f;
             _viewerCamera.farClipPlane = 10f;
-
             _viewerCamera.useOcclusionCulling = false;
 
-            // 3. Buat Light
+            var urpCameraData = camGo.AddComponent<UniversalAdditionalCameraData>();
+            urpCameraData.renderType = CameraRenderType.Base;
+            urpCameraData.renderPostProcessing = false;
+            urpCameraData.antialiasing = AntialiasingMode.None;
+
             var lightGo = new GameObject("3DViewer_Light");
             lightGo.transform.SetParent(_viewerContainer.transform);
             lightGo.transform.localPosition = new Vector3(2f, 4f, -2f);
             _viewerLight = lightGo.AddComponent<Light>();
             _viewerLight.type = LightType.Directional;
-            _viewerLight.intensity = 1.2f;
-            _viewerLight.transform.LookAt(_viewerContainer.transform.position);
+            _viewerLight.intensity = 1.5f;
+            _viewerLight.color = Color.white;
+            _viewerLight.transform.rotation = Quaternion.Euler(45f, -30f, 0f);
 
-            // 4. Buat RenderTexture dan sambungkan ke UI
+            RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
+            RenderSettings.ambientLight = new Color(0.4f, 0.4f, 0.4f);
+
             _renderTexture = new RenderTexture(512, 512, 24);
             _viewerCamera.targetTexture = _renderTexture;
 
             if (_heroContainer != null)
             {
                 _heroContainer.style.backgroundImage = new StyleBackground(Background.FromRenderTexture(_renderTexture));
+                _heroContainer.style.unityBackgroundScaleMode = ScaleMode.ScaleToFit;
                 RegisterDragEvents();
             }
 
@@ -128,7 +135,8 @@ public class DetailFurniturScreen : MonoBehaviour
             {
                 _heroContainer.Add(loadingLabel);
             }
-            var gltfImport = new GltfImport();
+            var urpAsset = GraphicsSettings.currentRenderPipeline as UniversalRenderPipelineAsset;
+            var gltfImport = new GltfImport(materialGenerator: new UniversalRPMaterialGenerator(urpAsset));
             string loadPath = await CacheManager.GetLocalGLBPath(item.modelUrl);
             if (string.IsNullOrEmpty(loadPath))
             {
@@ -153,7 +161,8 @@ public class DetailFurniturScreen : MonoBehaviour
                 float finalScale = item.scale > 0 ? item.scale : 1f;
                 _spawnedModel.transform.localScale = Vector3.one * finalScale;
 
-                FitModelToViewer(_spawnedModel, 1.2f);
+                await Task.Delay(50);
+                FitModelToViewer(_spawnedModel);
 
                 var animator = _spawnedModel.GetComponentInChildren<Animator>();
                 if (animator != null)
@@ -173,39 +182,41 @@ public class DetailFurniturScreen : MonoBehaviour
         }
     }
 
-    private void FitModelToViewer(GameObject model, float targetSize = 1.2f)
+    private void FitModelToViewer(GameObject model)
     {
+        if (model == null || _viewerCamera == null || _heroContainer == null) return;
+
         Renderer[] renderers = model.GetComponentsInChildren<Renderer>();
         if (renderers.Length == 0) return;
 
-        // 1. Hitung total bounds awal dalam world space
         Bounds bounds = renderers[0].bounds;
         for (int i = 1; i < renderers.Length; i++)
         {
-            bounds.Encapsulate(renderers[i].bounds);
+            if (renderers[i].enabled && renderers[i].bounds.size != Vector3.zero)
+                bounds.Encapsulate(renderers[i].bounds);
         }
 
-        // 2. Hitung dimensi terbesar
-        float maxDim = Mathf.Max(bounds.size.x, Mathf.Max(bounds.size.y, bounds.size.z));
-        if (maxDim <= 0) return;
+        if (bounds.size == Vector3.zero) return;
 
-        // 3. Terapkan skala agar muat di ukuran target
-        float scaleFactor = targetSize / maxDim;
-        model.transform.localScale = model.transform.localScale * scaleFactor;
+        float containerWidth = _heroContainer.resolvedStyle.width > 0 ? _heroContainer.resolvedStyle.width : 512f;
+        float containerHeight = _heroContainer.resolvedStyle.height > 0 ? _heroContainer.resolvedStyle.height : 512f;
+        float aspect = containerWidth / containerHeight;
+        _viewerCamera.aspect = aspect;
 
-        // 4. Hitung ulang bounds setelah scaling untuk penyesuaian posisi
-        bounds = renderers[0].bounds;
-        for (int i = 1; i < renderers.Length; i++)
-        {
-            bounds.Encapsulate(renderers[i].bounds);
-        }
+        float vertFovRad = _viewerCamera.fieldOfView * Mathf.Deg2Rad;
+        float horizFovRad = 2f * Mathf.Atan(Mathf.Tan(vertFovRad * 0.5f) * aspect);
 
-        // 5. Geser model agar pusat geometrinya berada di (1000, 1000.3, 1000)
-        Vector3 targetCenter = _viewerContainer.transform.position + Vector3.up * 0.3f;
-        Vector3 offset = targetCenter - bounds.center;
-        model.transform.position += offset;
+        float distanceVert = bounds.extents.y / Mathf.Tan(vertFovRad * 0.5f);
+        float distanceHoriz = bounds.extents.x / Mathf.Tan(horizFovRad * 0.5f);
+        float requiredDistance = Mathf.Max(distanceVert, distanceHoriz);
+
+        float finalDistance = Mathf.Max(requiredDistance * 1.4f, 2f);
+
+        _viewerCamera.farClipPlane = 1000f;
+        Vector3 camPos = bounds.center - (Vector3.forward * finalDistance);
+        _viewerCamera.transform.position = camPos;
+        _viewerCamera.transform.LookAt(bounds.center);
     }
-
 
     private void RegisterDragEvents()
     {
