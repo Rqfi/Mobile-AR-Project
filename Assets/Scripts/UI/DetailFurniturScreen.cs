@@ -162,7 +162,7 @@ public class DetailFurniturScreen : MonoBehaviour
                 _spawnedModel.transform.localScale = Vector3.one * finalScale;
 
                 await Task.Delay(50);
-                FitModelToViewer(_spawnedModel);
+                await FitModelToViewerAsync(_spawnedModel);
 
                 var animator = _spawnedModel.GetComponentInChildren<Animator>();
                 if (animator != null)
@@ -182,21 +182,55 @@ public class DetailFurniturScreen : MonoBehaviour
         }
     }
 
-    private void FitModelToViewer(GameObject model)
+    private async Task FitModelToViewerAsync(GameObject model)
     {
         if (model == null || _viewerCamera == null || _heroContainer == null) return;
 
-        Renderer[] renderers = model.GetComponentsInChildren<Renderer>();
-        if (renderers.Length == 0) return;
+        Bounds bounds = new Bounds(model.transform.position, Vector3.zero);
+        bool hasBounds = false;
 
-        Bounds bounds = renderers[0].bounds;
-        for (int i = 1; i < renderers.Length; i++)
+        for (int attempt = 0; attempt < 20; attempt++)
         {
-            if (renderers[i].enabled && renderers[i].bounds.size != Vector3.zero)
-                bounds.Encapsulate(renderers[i].bounds);
+            await Task.Delay(100);
+            if (model == null) return;
+
+            // FIX: Paksa kalkulasi ulang bounds mesh (penting untuk GLB dari Blender)
+            var meshFilters = model.GetComponentsInChildren<MeshFilter>();
+            foreach (var mf in meshFilters)
+                if (mf.sharedMesh != null) mf.sharedMesh.RecalculateBounds();
+
+            var skinnedMeshes = model.GetComponentsInChildren<SkinnedMeshRenderer>();
+            foreach (var smr in skinnedMeshes)
+                if (smr.sharedMesh != null) { smr.sharedMesh.RecalculateBounds(); smr.localBounds = smr.sharedMesh.bounds; }
+
+            Renderer[] renderers = model.GetComponentsInChildren<Renderer>();
+            hasBounds = false;
+            foreach (var r in renderers)
+            {
+                if (r.bounds.size == Vector3.zero) continue;
+
+                if (!hasBounds)
+                {
+                    bounds = r.bounds;
+                    hasBounds = true;
+                }
+                else
+                {
+                    bounds.Encapsulate(r.bounds);
+                }
+            }
+
+            if (hasBounds && bounds.size != Vector3.zero)
+            {
+                break;
+            }
         }
 
-        if (bounds.size == Vector3.zero) return;
+        if (!hasBounds || bounds.size == Vector3.zero)
+        {
+            Debug.LogWarning("[3DViewer] Gagal mendapatkan bounds model untuk framing kamera.");
+            return;
+        }
 
         float containerWidth = _heroContainer.resolvedStyle.width > 0 ? _heroContainer.resolvedStyle.width : 512f;
         float containerHeight = _heroContainer.resolvedStyle.height > 0 ? _heroContainer.resolvedStyle.height : 512f;

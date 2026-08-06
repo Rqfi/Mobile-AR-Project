@@ -12,6 +12,7 @@ using UnityEngine.InputSystem;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.Rendering;
 using GLTFast.Materials;
+using UnityEngine.XR.ARFoundation;
 
 public class ARSessionController : MonoBehaviour
 {
@@ -188,6 +189,13 @@ public class ARSessionController : MonoBehaviour
         if (_objectSpawner != null)
         {
             _objectSpawner.objectSpawned += OnObjectSpawned;
+        }
+
+        // FIX: Paksa ARPlaneManager untuk mendeteksi dinding vertikal (berjaga-jaga jika ter-reset)
+        var planeManager = FindFirstObjectByType<ARPlaneManager>();
+        if (planeManager != null)
+        {
+            planeManager.requestedDetectionMode = UnityEngine.XR.ARSubsystems.PlaneDetectionMode.Horizontal | UnityEngine.XR.ARSubsystems.PlaneDetectionMode.Vertical;
         }
 
         // Hubungkan tombol Hapus
@@ -389,7 +397,7 @@ public class ARSessionController : MonoBehaviour
         if (!hasBounds || bounds.size == Vector3.zero)
         {
             Debug.LogWarning($"[ARSession] GAGAL BACA UKURAN. Renderer ditemukan: {rendererCount}. Objek mungkin rusak/kosong.");
-            
+
             float fallback = item.scale > 0 ? item.scale : 1f;
             glbContainer.transform.localScale = Vector3.one * fallback;
             return;
@@ -579,17 +587,29 @@ public class ARSessionController : MonoBehaviour
 
         if (moveDirection != Vector3.zero)
         {
-            _currentSelectedObject.transform.position += moveDirection.normalized * (moveSpeed * Time.deltaTime);
+            var rb = _currentSelectedObject.GetComponent<Rigidbody>();
+            if (rb != null)
+            {
+                rb.MovePosition(_currentSelectedObject.transform.position + moveDirection.normalized * (moveSpeed * Time.deltaTime));
+            }
+            else
+            {
+                _currentSelectedObject.transform.position += moveDirection.normalized * (moveSpeed * Time.deltaTime);
+            }
         }
 
         // 3. Tangani Rotasi Objek (Rotate)
         if (_isRotatingLeft)
         {
-            _currentSelectedObject.transform.Rotate(Vector3.up, rotateSpeed * Time.deltaTime, Space.World);
+            var rb = _currentSelectedObject.GetComponent<Rigidbody>();
+            if (rb != null) rb.MoveRotation(rb.rotation * Quaternion.Euler(0, rotateSpeed * Time.deltaTime, 0));
+            else _currentSelectedObject.transform.Rotate(Vector3.up, rotateSpeed * Time.deltaTime, Space.World);
         }
         if (_isRotatingRight)
         {
-            _currentSelectedObject.transform.Rotate(Vector3.up, -rotateSpeed * Time.deltaTime, Space.World);
+            var rb = _currentSelectedObject.GetComponent<Rigidbody>();
+            if (rb != null) rb.MoveRotation(rb.rotation * Quaternion.Euler(0, -rotateSpeed * Time.deltaTime, 0));
+            else _currentSelectedObject.transform.Rotate(Vector3.up, -rotateSpeed * Time.deltaTime, Space.World);
         }
     }
 
@@ -643,11 +663,17 @@ public class ARSessionController : MonoBehaviour
         if (existingBox != null)
             Destroy(existingBox);
 
+        // FIX: Simpan rotasi asli dan reset sementara agar kalkulasi bounds (hitbox) tidak membesar
+        Quaternion originalRot = spawnedObject.transform.rotation;
+        spawnedObject.transform.rotation = Quaternion.identity;
+
         Bounds bounds = new Bounds(glbContainer.transform.position, Vector3.zero);
         var glbRenderers = glbContainer.GetComponentsInChildren<Renderer>();
         bool hasBounds = false;
         foreach (var r in glbRenderers)
         {
+            if (r.bounds.size == Vector3.zero) continue;
+
             if (!hasBounds) { bounds = r.bounds; hasBounds = true; }
             else bounds.Encapsulate(r.bounds);
         }
@@ -659,7 +685,21 @@ public class ARSessionController : MonoBehaviour
             Vector3 localSize = spawnedObject.transform.InverseTransformVector(bounds.size);
             box.center = localCenter;
             box.size = new Vector3(Mathf.Abs(localSize.x), Mathf.Abs(localSize.y), Mathf.Abs(localSize.z));
+
+            // Tambahkan Fisika (Rigidbody)
+            var rb = spawnedObject.GetComponent<Rigidbody>();
+            if (rb == null) rb = spawnedObject.AddComponent<Rigidbody>();
+            rb.useGravity = false;      // Matikan gravitasi agar tidak jatuh ke bawah
+            rb.isKinematic = false;     // Harus false agar bisa bertabrakan
+            rb.linearDamping = 10f;              // Rem/gesekan agar objek tidak meluncur terus saat ditabrak
+            rb.angularDamping = 10f;
+
+            // Kunci putaran agar objek tidak terguling saat saling tabrak
+            rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationY | RigidbodyConstraints.FreezeRotationZ;
         }
+
+        // Kembalikan rotasi ke semula
+        spawnedObject.transform.rotation = originalRot;
     }
 
     private void SetupHoldButton(Button button, Action<bool> onStateChanged)
