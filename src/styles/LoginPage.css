@@ -1,0 +1,144 @@
+/* src/styles/LoginPage.css */
+.login-page-wrapper {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: url('../assets/bg_login.png') center/cover no-repeat;
+    position: relative;
+}
+
+/* Efek kaca buram transparan (Glassmorphism) */
+.login-page-wrapper::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.25);
+    backdrop-filter: blur(8px);
+}
+
+.login-card-pro {
+    position: relative;
+    z-index: 1;
+    background-color: #e8e6e0;
+    /* Warna krem elegan seperti digambar */
+    width: 100%;
+    max-width: 380px;
+    padding: 40px 35px;
+    border-radius: 16px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    display: flex;
+    flex-direction: column;
+}
+
+.login-header-pro {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.login-header-pro h1 {
+    color: #ffc107;
+    font-size: 1.8rem;
+    margin: 0 0 5px 0;
+    letter-spacing: 1px;
+}
+
+.login-header-pro h2 {
+    color: #333;
+    font-size: 1.4rem;
+    margin: 0 0 10px 0;
+}
+
+.login-header-pro p {
+    color: #666;
+    font-size: 0.85rem;
+    margin: 0;
+}
+
+.form-group-pro {
+    margin-bottom: 20px;
+}
+
+.form-group-pro label {
+    display: block;
+    font-size: 0.85rem;
+    color: #555;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.input-pro {
+    width: 100%;
+    padding: 14px 15px;
+    border: 1px solid #d1cfc9;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    background-color: #f7f6f2;
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+    color: #333;
+}
+
+.input-pro:focus {
+    outline: none;
+    border-color: #ffc107;
+    background-color: #ffffff;
+    box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.2);
+}
+
+.login-options-pro {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    font-size: 0.8rem;
+}
+
+.login-options-pro label {
+    color: #666;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.login-options-pro a {
+    color: #a88000;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.btn-pro {
+    width: 100%;
+    padding: 14px;
+    background-color: #ffc107;
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.btn-pro:hover {
+    background-color: #e0a800;
+}
+
+.back-link-pro {
+    text-align: center;
+    margin-top: 25px;
+}
+
+.back-link-pro a {
+    color: #888;
+    text-decoration: none;
+    font-size: 0.85rem;
+}
