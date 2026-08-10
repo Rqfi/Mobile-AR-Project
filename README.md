@@ -6,7 +6,7 @@ Konsol ini adalah web berbasis **React** yang berfungsi sebagai panel admin untu
 
 Gambaran Umum
 
-Konsol ini memisahkan kepentingan pengelolaan konten (CMS) dari aplikasi Unity AR. Admin/content manager dapat menambah, mengedit, dan menghapus item furnitur — termasuk metadata, dimensi fisik, skala Unity, dan URL aset — tanpa menyentuh kode Unity sama sekali.
+Konsol ini memisahkan kepentingan pengelolaan konten (CMS) dari aplikasi Unity AR. Admin/content manager dapat menambah, mengedit, dan menghapus item furnitur termasuk metadata, dimensi fisik, skala Unity, dan URL aset tanpa menyentuh kode Unity sama sekali.
 
 ---
 
@@ -18,7 +18,8 @@ Konsol ini memisahkan kepentingan pengelolaan konten (CMS) dari aplikasi Unity A
 | Framework UI      | React 18                          |
 | Build Tool        | Vite                              |
 | Database          | Firebase Firestore                |
-| Autentikasi       | Firebase Anonymous Auth           |
+| Autentikasi       | Firebase Email & Password         |
+| Storage (Aset)    | Cloudinary API (Unsigned)         |
 | State Management  | React Hooks (useState, useEffect) |
 | Real-time Updates | Firestore`onSnapshot`             |
 
@@ -84,29 +85,19 @@ katalog/
 
 ---
 
-## Catatan
+## Sistem
 
-### URL Aset (Thumbnail & Model 3D)
+### 1. Manajemen Aset (Thumbnail & File 3D)
 
-Konsol ini tidak menyediakan fitur upload file. URL thumbnail dan model 3D harus sudah tersedia di server yang dapat diakses publik. Beberapa opsi hosting aset:
+Sistem dasbor ini mendukung dua mode penginputan file untuk fleksibilitas maksimal:
 
-- Firebase Storage
-- Google Cloud Storage
+1. Gunakan Link URL: Anda dapat menempelkan *raw link* langsung dari layanan *hosting* publik tak terbatas seperti GitHub (contoh: `https://raw.githubusercontent.com/...`).
+2. Upload File Langsung: Terintegrasi penuh dengan Cloudinary API (Unsigned Upload). Admin dapat memilih file gambar (JPG/PNG) dan 3D (`.glb`) langsung dari komputer, sistem akan otomatis mengunggahnya ke server Cloudinary, lalu menyimpan *secure URL*-nya ke dalam Firestore secara real-time.
+   Syarat Model 3D: Format yang didukung wajib `.glb` (binary glTF) agar ringan, optimal, dan terstandardisasi saat dibaca oleh mesin AR Unity di HP.
 
-Pastikan URL yang dimasukkan:
+### 2. Autentikasi & Keamanan Sesi
 
-- Dapat diakses tanpa autentikasi (publik)
-- Untuk model 3D: masih terdukung untuk format `.glb` (binary glTF), bukan `.gltf` atau `.fbx`
-
-### Autentikasi Anonymous
-
-Konsol maish menggunakan **Firebase Anonymous Authentication** untuk mengidentifikasi sesi. Ini berarti:
-
-- Tidak ada login username/password
-- Setiap sesi browser baru mendapat user ID anonim yang berbeda
-- Data di Firestore collection `katalog` bersifat **global** (tidak per-user)
-
-Konsol direncanakan menambahkan autentikasi email/password atau Google Sign-In dan menyesuaikan Firestore Security Rules.
+Konsol ini telah diamankan menggunakan Firebase Email & Password Authentication (*Production Grade*).
 
 ### Relasi dengan Aplikasi Unity
 
