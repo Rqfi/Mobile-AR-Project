@@ -91,7 +91,7 @@ katalog/
 
 Sistem dasbor ini mendukung dua mode penginputan file untuk fleksibilitas maksimal:
 
-1. Gunakan Link URL: Anda dapat menempelkan *raw link* langsung dari layanan *hosting* publik tak terbatas seperti GitHub (contoh: `https://raw.githubusercontent.com/...`).
+1. Gunakan Link URL:  Dapat menempelkan raw link langsung dari layanan hosting publik tak terbatas seperti GitHub (contoh: `https://raw.githubusercontent.com/...`).
 2. Upload File Langsung: Terintegrasi penuh dengan Cloudinary API (Unsigned Upload). Admin dapat memilih file gambar (JPG/PNG) dan 3D (`.glb`) langsung dari komputer, sistem akan otomatis mengunggahnya ke server Cloudinary, lalu menyimpan *secure URL*-nya ke dalam Firestore secara real-time.
    Syarat Model 3D: Format yang didukung wajib `.glb` (binary glTF) agar ringan, optimal, dan terstandardisasi saat dibaca oleh mesin AR Unity di HP.
 
