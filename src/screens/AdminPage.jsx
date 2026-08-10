@@ -17,8 +17,26 @@ function AdminPage({ db, handleLogout, showToast }) {
     const [depth, setDepth] = useState('');
     const [height, setHeight] = useState('');
     const [scale, setScale] = useState(1.0);
+
+    const [uploadMode, setUploadMode] = useState('link');
     const [thumbnailUrl, setThumbnailUrl] = useState('');
     const [modelUrl, setModelUrl] = useState('');
+    const [thumbnailFile, setThumbnailFile] = useState(null);
+    const [modelFile, setModelFile] = useState(null);
+
+    const uploadToCloudinary = async (file, isModel3D) => {
+        const resourceType = isModel3D ? 'raw' : 'image';
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('upload_preset', 'glb_preset');
+        const response = await fetch(`https://api.cloudinary.com/v1_1/amdz3ibk/${resourceType}/upload`, {
+            method: 'POST',
+            body: formData
+        });
+
+        const data = await response.json();
+        return data.secure_url;
+    };
 
     useEffect(() => {
         const unsubscribe = onSnapshot(collection(db, 'katalog'), (snapshot) => {
@@ -60,53 +78,57 @@ function AdminPage({ db, handleLogout, showToast }) {
         setScale(1.0);
         setThumbnailUrl('');
         setModelUrl('');
+        setThumbnailFile(null);
+        setModelFile(null);
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!thumbnailUrl || !modelUrl) {
-            showToast("Harap isi URL Gambar dan URL Model 3D!", "error");
-            return;
-        }
-
+        const form = e.target;
         setLoading(true);
-        showToast(editingItem ? "Memperbarui item..." : "Menyimpan ke Firestore...", "info");
 
         try {
+            let finalThumbnailUrl = thumbnailUrl;
+            let finalModelUrl = modelUrl;
+
+            if (uploadMode === 'file') {
+                if (thumbnailFile) {
+                    showToast("Sedang mengunggah gambar ke Cloudinary...", "success");
+                    finalThumbnailUrl = await uploadToCloudinary(thumbnailFile, false);
+                }
+                if (modelFile) {
+                    showToast("Sedang mengunggah file 3D (.glb) ke Cloudinary...", "success");
+                    finalModelUrl = await uploadToCloudinary(modelFile, true);
+                }
+            }
+
+            const itemData = {
+                name,
+                category,
+                description,
+                width: Number(width),
+                depth: Number(depth),
+                height: Number(height),
+                scale: Number(scale),
+                thumbnailUrl: finalThumbnailUrl,
+                modelUrl: finalModelUrl,
+                updatedAt: new Date().toISOString()
+            };
+
             if (editingItem) {
-                await updateDoc(doc(db, 'katalog', editingItem.id), {
-                    name,
-                    category,
-                    description,
-                    width: parseFloat(width),
-                    depth: parseFloat(depth),
-                    height: parseFloat(height),
-                    scale: parseFloat(scale),
-                    thumbnailUrl,
-                    modelUrl
-                });
-                showToast("Item berhasil diperbarui!", "success");
+                await updateDoc(doc(db, 'katalog', editingItem.id), itemData);
+                showToast("Berhasil diperbarui!", "success");
             } else {
-                await addDoc(collection(db, 'katalog'), {
-                    name,
-                    category,
-                    description,
-                    width: parseFloat(width),
-                    depth: parseFloat(depth),
-                    height: parseFloat(height),
-                    scale: parseFloat(scale),
-                    thumbnailUrl,
-                    modelUrl
-                });
-                showToast("Item berhasil ditambahkan ke katalog!", "success");
+                itemData.createdAt = new Date().toISOString();
+                await addDoc(collection(db, 'katalog'), itemData);
+                showToast("Furnitur berhasil ditambahkan ke katalog!", "success");
             }
 
             handleCancelEdit();
-            e.target.reset();
-
+            form.reset();
         } catch (error) {
-            console.error("Error submit:", error);
-            showToast("Gagal menyimpan item: " + error.message, "error");
+            console.error("Error saving:", error);
+            showToast("Gagal menyimpan data: " + error.message, "error");
         } finally {
             setLoading(false);
         }
@@ -227,48 +249,99 @@ function AdminPage({ db, handleLogout, showToast }) {
                             />
                         </div>
 
-                        <div className="form-group">
-                            <label>URL Link Gambar Thumbnail</label>
-                            <label>https://raw.githubusercontent.com/...</label>
-                            <input
-                                type="url"
+                        {/* Pilihan Mode Input File */}
+                        <div className="form-group" style={{ backgroundColor: '#e9ecef', padding: '15px', borderRadius: '10px' }}>
+                            <label style={{ fontWeight: '600', color: '#333' }}>Metode Input File</label>
+                            <select
                                 className="form-control"
-                                placeholder="https://raw.githubusercontent.com/.../gambar.png"
-                                value={thumbnailUrl}
-                                onChange={(e) => setThumbnailUrl(e.target.value)}
-                                required
-                            />
+                                value={uploadMode}
+                                onChange={(e) => setUploadMode(e.target.value)}
+                                style={{ backgroundColor: '#fff', border: '1px solid #ccc', cursor: 'pointer' }}
+                            >
+                                <option value="link">Link URL</option>
+                                <option value="file">Upload File</option>
+                            </select>
                         </div>
 
-                        <div className="form-group">
-                            <label>URL Link Model 3D (.glb)</label>
-                            <label>https://raw.githubusercontent.com/...</label>
-                            <input
-                                type="url"
-                                className="form-control"
-                                placeholder="https://raw.githubusercontent.com/.../model.glb"
-                                value={modelUrl}
-                                onChange={(e) => setModelUrl(e.target.value)}
-                                required
-                            />
-                        </div>
+                        {/* Tampilkan kotak form sesuai mode yang dipilih */}
+                        {uploadMode === 'link' ? (
+                            <>
+                                <div className="form-group">
+                                    <label style={{ marginBottom: '15px' }}>contoh: https://raw.githubusercontent.com/</label>
+                                    <label>URL Link Gambar Thumbnail</label>
+                                    <input
+                                        type="url"
+                                        className="form-control"
+                                        placeholder="https://raw.githubusercontent.com/.../gambar.png"
+                                        value={thumbnailUrl}
+                                        onChange={(e) => setThumbnailUrl(e.target.value)}
+                                        required={!editingItem}
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>URL Link Model 3D (.glb)</label>
+                                    <input
+                                        type="url"
+                                        className="form-control"
+                                        placeholder="https://raw.githubusercontent.com/.../model.glb"
+                                        value={modelUrl}
+                                        onChange={(e) => setModelUrl(e.target.value)}
+                                        required={!editingItem}
+                                    />
+                                </div>
+                            </>
+                        ) : (
+                            <>
+                                <div className="form-group">
+                                    <label>Upload Gambar Thumbnail (JPG/PNG)</label>
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        className="form-control"
+                                        onChange={(e) => setThumbnailFile(e.target.files[0])}
+                                        required={!editingItem}
+                                        style={{ padding: '9px 16px', backgroundColor: '#ffffff', cursor: 'pointer' }}
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>Upload Model 3D (.glb)</label>
+                                    <input
+                                        type="file"
+                                        accept=".glb"
+                                        className="form-control"
+                                        onChange={(e) => setModelFile(e.target.files[0])}
+                                        required={!editingItem}
+                                        style={{ padding: '9px 16px', backgroundColor: '#ffffff', cursor: 'pointer' }}
+                                    />
+                                </div>
+                            </>
+                        )}
 
-                        <div style={{ display: 'flex', gap: '10px' }}>
-                            <button type="submit" className="btn" disabled={loading}>
-                                {loading ? "Menyimpan..." : (editingItem ? "Perbarui Item" : "Simpan ke Katalog")}
+                        <div style={{
+                            position: 'sticky',
+                            bottom: 0, /* UBAH BARIS INI: Dari '-35px' menjadi 0 */
+                            backgroundColor: '#ffffff',
+                            borderTop: '2px solid #ffe600ff',
+                            padding: '20px 0 40px 0', /* Ubah 35px menjadi 40px agar sedikit lebih lega */
+                            display: 'flex',
+                            gap: '10px',
+                            zIndex: 10
+                        }}>
+                            <button type="submit" className="btn" disabled={loading} style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}>
+                                {loading ? "Menyimpan..." : (editingItem ? "Perbarui Item" : <>Tambah Item</>)}
                             </button>
+
                             {editingItem && (
                                 <button
                                     type="button"
                                     onClick={handleCancelEdit}
                                     className="btn"
-                                    style={{ backgroundColor: '#b5b5c2ff' }}
+                                    style={{ backgroundColor: '#b5b5c2ff', flex: 1 }}
                                 >
                                     Batal Edit
                                 </button>
                             )}
                         </div>
-
                     </form>
                 </div>
 

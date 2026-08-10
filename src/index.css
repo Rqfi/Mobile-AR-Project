@@ -122,15 +122,21 @@ h2 {
   transform: none;
 }
 
-/* Catalog View */
 .catalog-container {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  width: 100%;
   flex: 1;
-  padding: 40px 50px;
+  padding: 35px 50px;
   box-sizing: border-box;
+  height: calc(100vh - 61px);
+  overflow-y: auto;
+}
+
+.catalog-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.catalog-container::-webkit-scrollbar-thumb {
+  background: #d1cfc9;
+  border-radius: 10px;
 }
 
 .catalog-list {
@@ -278,14 +284,13 @@ h2 {
   width: 360px;
   min-width: 360px;
   background-color: #ffffff;
-  padding: 35px 40px;
+  padding: 35px 40px 0 40px;
+  /* UBAH BARIS INI SAJA: Bawah menjadi 0 */
   box-sizing: border-box;
   border-right: 1px solid #eaeaec;
-  position: sticky;
-  top: 61px;
-  /* Jarak untuk mengakomodasi tinggi Navbar */
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.02);
+  z-index: 10;
   height: calc(100vh - 61px);
-  /* Tinggi penuh layar dikurangi Navbar */
   overflow-y: auto;
 }
 
@@ -302,8 +307,8 @@ h2 {
 /* Layout Dasar Baru ala Dashboard */
 .admin-layout {
   background-color: #f9f9fb;
-  /* Abu-abu sangat terang */
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
 }
 
 /* Navbar Layar Penuh */
