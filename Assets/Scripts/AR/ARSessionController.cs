@@ -231,6 +231,10 @@ public class ARSessionController : MonoBehaviour
         }
     }
 
+    // Variabel baru untuk membedakan objek di dinding vs lantai
+    private System.Collections.Generic.Dictionary<GameObject, bool> _objectOnWallMap = new System.Collections.Generic.Dictionary<GameObject, bool>();
+    private System.Collections.Generic.Dictionary<GameObject, Vector3> _objectWallNormalMap = new System.Collections.Generic.Dictionary<GameObject, Vector3>();
+
     private void OnObjectSpawned(GameObject spawnedObject)
     {
         _currentSelectedObject = spawnedObject;
@@ -238,6 +242,23 @@ public class ARSessionController : MonoBehaviour
         // Tampilkan panel kontrol
         if (interactionPanel != null)
             interactionPanel.SetActive(true);
+
+        bool isOnWall = Vector3.Angle(spawnedObject.transform.up, Vector3.up) > 45f;
+        _objectOnWallMap[spawnedObject] = isOnWall;
+
+        if (isOnWall)
+        {
+            Vector3 wallNormal = spawnedObject.transform.up;
+            _objectWallNormalMap[spawnedObject] = wallNormal;
+            spawnedObject.transform.rotation = Quaternion.LookRotation(wallNormal, Vector3.up);
+        }
+        else
+        {
+            Vector3 forward = spawnedObject.transform.forward;
+            forward.y = 0;
+            if (forward != Vector3.zero)
+                spawnedObject.transform.rotation = Quaternion.LookRotation(forward, Vector3.up);
+        }
 
         string selectedId = AppState.SelectedFurnitureId;
         if (string.IsNullOrEmpty(selectedId))
@@ -255,7 +276,6 @@ public class ARSessionController : MonoBehaviour
 
         LoadGLBModelInAR(spawnedObject, item);
     }
-
 
     private async void LoadGLBModelInAR(GameObject spawnedObject, FurnitureItem item)
     {
@@ -570,20 +590,40 @@ public class ARSessionController : MonoBehaviour
             return;
         }
 
-        // 2. Tangani Geser Objek (Move) Relatif Terhadap Arah Kamera HP
-        Vector3 cameraForward = Camera.main.transform.forward;
-        cameraForward.y = 0f; // Kunci sumbu Y agar gerakan tetap mendatar di lantai
-        cameraForward.Normalize();
-
-        Vector3 cameraRight = Camera.main.transform.right;
-        cameraRight.y = 0f;
-        cameraRight.Normalize();
-
+        // 2. Tangani Geser Objek (Move) Berdasarkan Permukaan
         Vector3 moveDirection = Vector3.zero;
-        if (_isMovingForward) moveDirection += cameraForward;
-        if (_isMovingBackward) moveDirection -= cameraForward;
-        if (_isMovingLeft) moveDirection -= cameraRight;
-        if (_isMovingRight) moveDirection += cameraRight;
+        bool isOnWall = _objectOnWallMap.ContainsKey(_currentSelectedObject) && _objectOnWallMap[_currentSelectedObject];
+
+        if (isOnWall)
+        {
+            Vector3 wallUp = Vector3.up;
+            // Ambil arah asli dinding (jika tidak ada, gunakan arah depan objek sebagai cadangan)
+            Vector3 wallNormal = _objectWallNormalMap.ContainsKey(_currentSelectedObject) ? _objectWallNormalMap[_currentSelectedObject] : _currentSelectedObject.transform.forward;
+
+            // Rumus Cross Product: menghasilkan arah Kanan (Right) yang 100% sejajar dengan dinding
+            Vector3 wallRight = Vector3.Cross(wallNormal, wallUp).normalized;
+
+            if (_isMovingForward) moveDirection += wallUp;
+            if (_isMovingBackward) moveDirection -= wallUp;
+            if (_isMovingRight) moveDirection += wallRight;
+            if (_isMovingLeft) moveDirection -= wallRight;
+        }
+        else
+        {
+            // Jika di lantai: pergerakan mendatar (X, Z) mengikuti arah kamera
+            Vector3 cameraForward = Camera.main.transform.forward;
+            cameraForward.y = 0f;
+            cameraForward.Normalize();
+
+            Vector3 cameraRight = Camera.main.transform.right;
+            cameraRight.y = 0f;
+            cameraRight.Normalize();
+
+            if (_isMovingForward) moveDirection += cameraForward;
+            if (_isMovingBackward) moveDirection -= cameraForward;
+            if (_isMovingRight) moveDirection += cameraRight;
+            if (_isMovingLeft) moveDirection -= cameraRight;
+        }
 
         if (moveDirection != Vector3.zero)
         {
