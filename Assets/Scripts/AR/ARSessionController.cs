@@ -36,6 +36,7 @@ public class ARSessionController : MonoBehaviour
     [SerializeField] private float rotateSpeed = 60f;  // Kecepatan rotasi objek (derajat per detik)
 
     private GameObject _currentSelectedObject;
+    private Rigidbody _cachedRb;
     private GameObject _selectionIndicator;
 
     // Status hold tombol
@@ -625,12 +626,15 @@ public class ARSessionController : MonoBehaviour
             if (_isMovingLeft) moveDirection -= cameraRight;
         }
 
+        if (_cachedRb == null || _cachedRb.gameObject != _currentSelectedObject)
+        {
+            _cachedRb = _currentSelectedObject.GetComponent<Rigidbody>();
+        }
         if (moveDirection != Vector3.zero)
         {
-            var rb = _currentSelectedObject.GetComponent<Rigidbody>();
-            if (rb != null)
+            if (_cachedRb != null)
             {
-                rb.MovePosition(_currentSelectedObject.transform.position + moveDirection.normalized * (moveSpeed * Time.deltaTime));
+                _cachedRb.MovePosition(_currentSelectedObject.transform.position + moveDirection.normalized * (moveSpeed * Time.deltaTime));
             }
             else
             {
@@ -639,16 +643,14 @@ public class ARSessionController : MonoBehaviour
         }
 
         // 3. Tangani Rotasi Objek (Rotate)
-        if (_isRotatingLeft)
-        {
-            var rb = _currentSelectedObject.GetComponent<Rigidbody>();
-            if (rb != null) rb.MoveRotation(rb.rotation * Quaternion.Euler(0, rotateSpeed * Time.deltaTime, 0));
-            else _currentSelectedObject.transform.Rotate(Vector3.up, rotateSpeed * Time.deltaTime, Space.World);
-        }
         if (_isRotatingRight)
         {
-            var rb = _currentSelectedObject.GetComponent<Rigidbody>();
-            if (rb != null) rb.MoveRotation(rb.rotation * Quaternion.Euler(0, -rotateSpeed * Time.deltaTime, 0));
+            if (_cachedRb != null) _cachedRb.MoveRotation(_cachedRb.rotation * Quaternion.Euler(0, rotateSpeed * Time.deltaTime, 0));
+            else _currentSelectedObject.transform.Rotate(Vector3.up, rotateSpeed * Time.deltaTime, Space.World);
+        }
+        if (_isRotatingLeft)
+        {
+            if (_cachedRb != null) _cachedRb.MoveRotation(_cachedRb.rotation * Quaternion.Euler(0, -rotateSpeed * Time.deltaTime, 0));
             else _currentSelectedObject.transform.Rotate(Vector3.up, -rotateSpeed * Time.deltaTime, Space.World);
         }
     }
