@@ -1836,8 +1836,8 @@ MonoBehaviour:
   btnMoveDown: {fileID: 2086942703}
   btnMoveLeft: {fileID: 526719948}
   btnMoveRight: {fileID: 442408420}
-  moveSpeed: 0.5
-  rotateSpeed: 60
+  moveSpeed: 1
+  rotateSpeed: 90
 --- !u!1 &1461600359
 GameObject:
   m_ObjectHideFlags: 0

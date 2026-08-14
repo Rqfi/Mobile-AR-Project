@@ -38,6 +38,8 @@ public class ARSessionController : MonoBehaviour
     private GameObject _currentSelectedObject;
     private Rigidbody _cachedRb;
     private GameObject _selectionIndicator;
+    private float _raycastTimer = 0f;
+    private float _raycastInterval = 0.06f;
 
     // Status hold tombol
     private bool _isRotatingLeft;
@@ -581,7 +583,12 @@ public class ARSessionController : MonoBehaviour
             }
         }
 
-        UpdateSelectionIndicator();
+        _raycastTimer += Time.deltaTime;
+        if (_raycastTimer >= _raycastInterval)
+        {
+            _raycastTimer = 0f;
+            UpdateSelectionIndicator();
+        }
 
         // Jika tidak ada objek terpilih, sembunyikan panel kontrol dan lewati sisa logika gerakan
         if (_currentSelectedObject == null)
@@ -728,19 +735,16 @@ public class ARSessionController : MonoBehaviour
             box.center = localCenter;
             box.size = new Vector3(Mathf.Abs(localSize.x), Mathf.Abs(localSize.y), Mathf.Abs(localSize.z));
 
-            // Tambahkan Fisika (Rigidbody)
             var rb = spawnedObject.GetComponent<Rigidbody>();
             if (rb == null) rb = spawnedObject.AddComponent<Rigidbody>();
-            rb.useGravity = false;      // Matikan gravitasi agar tidak jatuh ke bawah
-            rb.isKinematic = false;     // Harus false agar bisa bertabrakan
-            rb.linearDamping = 10f;              // Rem/gesekan agar objek tidak meluncur terus saat ditabrak
+            rb.useGravity = false;
+            rb.isKinematic = false;
+            rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+            rb.linearDamping = 10f;
             rb.angularDamping = 10f;
-
-            // Kunci putaran agar objek tidak terguling saat saling tabrak
             rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationY | RigidbodyConstraints.FreezeRotationZ;
         }
 
-        // Kembalikan rotasi ke semula
         spawnedObject.transform.rotation = originalRot;
     }
 
