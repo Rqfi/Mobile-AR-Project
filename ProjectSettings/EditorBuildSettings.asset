@@ -11,11 +11,16 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/ARSession.unity
     guid: 164cc0f293c59f44f9aa625bc2b4f213
+  - enabled: 1
+    path: Assets/Scenes/NianticScene.unity
+    guid: 0035492cc3fd8334c9fb7c631df6cb0f
   m_configObjects:
+    NianticSpatial.NSDK.AR.AuthBuildSettings: {fileID: 11400000, guid: 4502e81d01ce333458eb149180749ad3, type: 2}
+    NianticSpatial.NSDK.AR.NsdkSettings: {fileID: 11400000, guid: fb50ebd4e5a56804bb04c90e7e571865, type: 2}
     UnityEditor.XR.ARCore.ARCoreSettings: {fileID: 11400000, guid: 6ee72d15cf39dd748a13eac57397b9af, type: 2}
     UnityEditor.XR.ARKit.ARKitSettings: {fileID: 11400000, guid: 0465d33c6aee55f44b0237db8b0e0259, type: 2}
     com.unity.xr.arfoundation.simulation_settings: {fileID: 11400000, guid: c199e683398494f32b4cde18e73ab731, type: 2}
     com.unity.xr.magicleap.magic_leap_settings: {fileID: 11400000, guid: 0b53a025a635a4393ba0b49822242280, type: 2}
     com.unity.xr.management.loader_settings: {fileID: 11400000, guid: 3fd4fc0127790db4bae83f7b77da8d45, type: 2}
-    com.unity.xr.openxr.settings4: {fileID: 11400000, guid: b07c4ba7650be4c25b3d0c497e7e2bb8, type: 2}
+    com.unity.xr.openxr.settings4: {fileID: 11400000, guid: 776a94e3a897e6a45a1733368ca25668, type: 2}
   m_UseUCBPForAssetBundles: 0

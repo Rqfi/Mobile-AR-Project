@@ -59,7 +59,7 @@ public class DashboardScreen : MonoBehaviour
     }
 
     private void OnHeroClick(ClickEvent evt) =>
-        SceneManager.LoadScene("ARSession");
+        SceneManager.LoadScene("NianticScene");
 
     private void OnLihatKatalog(ClickEvent evt) =>
         ScreenManager.Instance.ShowKatalog();
