@@ -20,6 +20,13 @@ public class ARSessionController : MonoBehaviour
     [SerializeField] private Button btnBack;
     [SerializeField] private Button btnScreenshot;
     [SerializeField] private GameObject flashOverlay;
+    [SerializeField] private Button btnToggleCatalog;         // Tombol Kubus (Buka) & Silang (Tutup)
+    [SerializeField] private GameObject catalogPanel;         // Panel scroll horizontal berisi daftar objek
+    [SerializeField] private Transform catalogContentContainer;
+    [SerializeField] private GameObject catalogItemPrefab;
+    [SerializeField] private UnityEngine.UI.Image catalogToggleIcon;
+    [SerializeField] private Sprite iconCube;
+    [SerializeField] private Sprite iconClose;
 
     [Header("AR Object Interaction UI")]
     [SerializeField] private GameObject interactionPanel; // Kontainer semua tombol kontrol
@@ -182,12 +189,34 @@ public class ARSessionController : MonoBehaviour
 
     private ObjectSpawner _objectSpawner;
 
+    private bool _isCatalogOpen = false;
+
+    private void ToggleCatalog()
+    {
+        _isCatalogOpen = !_isCatalogOpen;
+
+        if (catalogPanel != null)
+            catalogPanel.SetActive(_isCatalogOpen);
+
+        if (catalogToggleIcon != null && iconCube != null && iconClose != null)
+        {
+            catalogToggleIcon.sprite = _isCatalogOpen ? iconClose : iconCube;
+        }
+
+        Debug.Log($"[ARSession] Katalog AR {(_isCatalogOpen ? "Dibuka" : "Ditutup")}");
+    }
+
     private void Start()
     {
         btnBack.onClick.AddListener(OnBackClick);
         btnScreenshot.onClick.AddListener(OnScreenshotClick);
 
-        // Cari ObjectSpawner di scene dan daftarkan event spawn
+        if (btnToggleCatalog != null)
+            btnToggleCatalog.onClick.AddListener(ToggleCatalog);
+        if (catalogPanel != null)
+            catalogPanel.SetActive(false);
+        PopulateCatalog();
+
         _objectSpawner = FindFirstObjectByType<ObjectSpawner>();
         if (_objectSpawner != null)
         {
@@ -770,5 +799,66 @@ public class ARSessionController : MonoBehaviour
         pointerUp.callback.AddListener((data) => { onStateChanged(false); });
         trigger.triggers.Add(pointerUp);
     }
+    private async void PopulateCatalog()
+    {
+        if (catalogContentContainer == null || catalogItemPrefab == null) return;
 
+        foreach (Transform child in catalogContentContainer)
+        {
+            Destroy(child.gameObject);
+        }
+
+        var items = FurnitureDatabase.GetAll();
+
+        if (items.Count == 0 && FirebaseManager.Instance != null && FirebaseManager.Instance.IsReady)
+        {
+            items = await FirebaseManager.Instance.GetKatalogAsync();
+            FurnitureDatabase.SetItems(items);
+        }
+
+        foreach (var item in items)
+        {
+            var go = Instantiate(catalogItemPrefab, catalogContentContainer);
+
+            var textUI = go.GetComponentInChildren<UnityEngine.UI.Text>();
+            if (textUI != null) textUI.text = item.name;
+
+            var rawImageUI = go.GetComponentInChildren<UnityEngine.UI.RawImage>();
+            if (rawImageUI != null) LoadThumbnailToRawImage(rawImageUI, item.thumbnailUrl);
+
+            var btn = go.GetComponent<Button>();
+            if (btn != null)
+            {
+                btn.onClick.AddListener(() => OnCatalogItemClicked(item));
+            }
+        }
+    }
+
+    private void OnCatalogItemClicked(FurnitureItem item)
+    {
+        AppState.SelectedFurnitureId = item.id;
+        Debug.Log($"[ARSession] Objek Aktif Diganti: {item.name}");
+
+        ToggleCatalog();
+    }
+
+    private async void LoadThumbnailToRawImage(UnityEngine.UI.RawImage rawImage, string url)
+    {
+        if (string.IsNullOrEmpty(url) || rawImage == null) return;
+
+        using (var webRequest = UnityEngine.Networking.UnityWebRequestTexture.GetTexture(url))
+        {
+            var operation = webRequest.SendWebRequest();
+            while (!operation.isDone)
+            {
+                await System.Threading.Tasks.Task.Delay(50);
+            }
+
+            if (webRequest.result == UnityEngine.Networking.UnityWebRequest.Result.Success)
+            {
+                var texture = UnityEngine.Networking.DownloadHandlerTexture.GetContent(webRequest);
+                rawImage.texture = texture;
+            }
+        }
+    }
 }
