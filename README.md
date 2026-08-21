@@ -30,12 +30,12 @@ Konsol ini memisahkan kepentingan pengelolaan konten (CMS) dari aplikasi Unity A
 ### CRUD Katalog Furnitur
 
 
-| Operasi    | Keterangan                                      |
-| ------------ | ------------------------------------------------- |
-| **Create** | Tambah item furnitur baru                       |
-| **Read**   | Tampil real-time dari Firestore via`onSnapshot` |
-| **Update** | Edit item                                       |
-| **Delete** | Hapus item                                      |
+| Operasi    | Keterangan                      |
+| ------------ | --------------------------------- |
+| **Create** | Tambah item furnitur baru       |
+| **Read**   | Tampil real-time dari Firestore |
+| **Update** | Edit item                       |
+| **Delete** | Hapus item                      |
 
 ---
 
