@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { collection, addDoc, deleteDoc, doc, onSnapshot, updateDoc } from 'firebase/firestore';
 import ModelViewerModal from '../components/ModelViewerModel';
+import '../styles/AdminPage.css';
 
 function AdminPage({ db, handleLogout, showToast }) {
     const [items, setItems] = useState([]);

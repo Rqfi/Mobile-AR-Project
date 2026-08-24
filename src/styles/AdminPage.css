@@ -1,0 +1,224 @@
+.admin-layout {
+    background-color: #f9f9fb;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.container {
+    display: flex;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+.top-navbar {
+    background-color: #ffffff;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 40px;
+    border-bottom: 1px solid #eaeaec;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+}
+
+.nav-brand {
+    font-size: 1.1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.brand-primary {
+    color: #ffc107;
+    letter-spacing: 1px;
+}
+
+.brand-divider {
+    color: #dddddd;
+    font-weight: 300;
+}
+
+.brand-secondary {
+    color: #888888;
+}
+
+.btn-logout-nav {
+    background: transparent;
+    border: 1px solid #cccccc;
+    color: #333;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-logout-nav:hover {
+    background: #f1f1f1;
+}
+
+.sidebar-form {
+    width: 360px;
+    min-width: 360px;
+    background-color: #ffffff;
+    padding: 35px 40px 0 40px;
+    box-sizing: border-box;
+    border-right: 1px solid #eaeaec;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.02);
+    z-index: 10;
+    height: calc(100vh - 61px);
+    overflow-y: auto;
+}
+
+.sidebar-form::-webkit-scrollbar {
+    width: 5px;
+}
+
+.sidebar-form::-webkit-scrollbar-thumb {
+    background: #d1cfc9;
+    border-radius: 10px;
+}
+
+.catalog-container {
+    flex: 1;
+    padding: 35px 50px;
+    box-sizing: border-box;
+    height: calc(100vh - 61px);
+    overflow-y: auto;
+}
+
+.catalog-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.catalog-container::-webkit-scrollbar-thumb {
+    background: #d1cfc9;
+    border-radius: 10px;
+}
+
+.catalog-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 20px;
+}
+
+.catalog-card {
+    background-color: #ffffff;
+    border-radius: 20px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #e5e3db;
+    transition: all 0.3s ease;
+}
+
+.catalog-card:hover {
+    transform: translateY(-4px);
+    border-color: #ffc107;
+    box-shadow: 0 8px 30px rgba(255, 200, 0, 0.05);
+}
+
+.catalog-thumb {
+    width: 100%;
+    height: 180px;
+    background-color: #f7f6f2;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #777777;
+    border-bottom: 1px solid #e5e3db;
+}
+
+.catalog-info {
+    padding: 16px;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.catalog-name {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: #333333;
+}
+
+.catalog-meta {
+    font-size: 12px;
+    color: #ffc107;
+    font-weight: 500;
+    margin-bottom: 10px;
+}
+
+.catalog-desc {
+    font-size: 13px;
+    color: #777777;
+    line-height: 1.4;
+    margin-bottom: 12px;
+    flex-grow: 1;
+}
+
+.catalog-specs {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: #777777;
+    background-color: rgba(255, 255, 255, 0.02);
+    padding: 8px 10px;
+    border-radius: 6px;
+    margin-bottom: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.btn-delete {
+    background-color: transparent;
+    color: #ef4444;
+    border: 1px solid #ef4444;
+    padding: 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 100%;
+}
+
+.btn-delete:hover {
+    background-color: #ef4444;
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(255, 77, 77, 0.25);
+}
+
+@media (max-width: 768px) {
+    .admin-layout {
+        height: auto;
+        overflow: visible;
+    }
+
+    .sidebar-form {
+        width: 100%;
+        min-width: 100%;
+        height: auto;
+        overflow-y: visible;
+        border-right: none;
+        border-bottom: 5px solid #eaeaec;
+    }
+
+    .catalog-container {
+        width: 100%;
+        height: auto;
+        overflow-y: visible;
+        padding: 25px 20px;
+    }
+
+    .catalog-list {
+        grid-template-columns: 1fr;
+    }
+}
