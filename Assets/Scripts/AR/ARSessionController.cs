@@ -538,13 +538,27 @@ public class ARSessionController : MonoBehaviour
             bounds.Encapsulate(renderers[i].bounds);
         }
 
-        // Posisikan di bawah tengah objek
-        Vector3 indicatorPos = new Vector3(bounds.center.x, bounds.min.y + 0.001f, bounds.center.z);
-        _selectionIndicator.transform.position = indicatorPos;
-
-        // Skala sesuai lebar/kedalaman objek (sedikit lebih besar)
-        float diameter = Mathf.Max(bounds.size.x, bounds.size.z) * 1.2f;
+        // 1. Skala cincin kuning (ambil dimensi terbesar dari objek)
+        float diameter = Mathf.Max(bounds.size.x, Mathf.Max(bounds.size.y, bounds.size.z)) * 1.1f;
         _selectionIndicator.transform.localScale = new Vector3(diameter, 0.002f, diameter);
+
+        // 2. Periksa apakah objek ada di dinding
+        if (_objectOnWallMap.TryGetValue(_currentSelectedObject, out bool onWall) && onWall)
+        {
+            if (_objectWallNormalMap.TryGetValue(_currentSelectedObject, out Vector3 wallNormal))
+            {
+                // Putar cincin agar pipih menempel di dinding
+                _selectionIndicator.transform.up = wallNormal;
+                // Posisikan di titik origin objek (ditambah sedikit jarak agar tidak tenggelam di dinding)
+                _selectionIndicator.transform.position = _currentSelectedObject.transform.position + (wallNormal * 0.005f);
+            }
+        }
+        else
+        {
+            // 3. Logika default untuk lantai (cincin horizontal di bawah kaki objek)
+            _selectionIndicator.transform.up = Vector3.up;
+            _selectionIndicator.transform.position = new Vector3(bounds.center.x, bounds.min.y + 0.005f, bounds.center.z);
+        }
 
         _selectionIndicator.SetActive(true);
     }
@@ -679,15 +693,30 @@ public class ARSessionController : MonoBehaviour
         }
 
         // 3. Tangani Rotasi Objek (Rotate)
-        if (_isRotatingRight)
+        if (_isRotatingRight || _isRotatingLeft)
         {
-            if (_cachedRb != null) _cachedRb.MoveRotation(_cachedRb.rotation * Quaternion.Euler(0, rotateSpeed * Time.deltaTime, 0));
-            else _currentSelectedObject.transform.Rotate(Vector3.up, rotateSpeed * Time.deltaTime, Space.World);
-        }
-        if (_isRotatingLeft)
-        {
-            if (_cachedRb != null) _cachedRb.MoveRotation(_cachedRb.rotation * Quaternion.Euler(0, -rotateSpeed * Time.deltaTime, 0));
-            else _currentSelectedObject.transform.Rotate(Vector3.up, -rotateSpeed * Time.deltaTime, Space.World);
+            float currentRotateSpeed = _isRotatingRight ? rotateSpeed : -rotateSpeed;
+            Vector3 axis = Vector3.up; // Default sumbu putar untuk objek di lantai
+
+            // Jika objek berada di dinding, gunakan sumbu normal dinding (agar berputar seperti jarum jam di dinding)
+            if (_objectOnWallMap.TryGetValue(_currentSelectedObject, out bool onWall) && onWall)
+            {
+                if (_objectWallNormalMap.TryGetValue(_currentSelectedObject, out Vector3 wallNormal))
+                {
+                    axis = wallNormal;
+                }
+            }
+
+            // Terapkan rotasi
+            if (_cachedRb != null)
+            {
+                Quaternion deltaRotation = Quaternion.AngleAxis(currentRotateSpeed * Time.deltaTime, axis);
+                _cachedRb.MoveRotation(deltaRotation * _cachedRb.rotation);
+            }
+            else
+            {
+                _currentSelectedObject.transform.Rotate(axis, currentRotateSpeed * Time.deltaTime, Space.World);
+            }
         }
     }
 
