@@ -42,6 +42,11 @@ public class ARSessionController : MonoBehaviour
     [SerializeField] private float moveSpeed = 0.5f;   // Kecepatan geser objek (meter per detik)
     [SerializeField] private float rotateSpeed = 60f;  // Kecepatan rotasi objek (derajat per detik)
 
+    [Header("Testing & Debug UI")]
+    [SerializeField] private Button btnToggleOcclusion;
+    [SerializeField] private Text txtOcclusionStatus;
+    private AROcclusionManager _occlusionManager;
+
     private GameObject _currentSelectedObject;
     private Rigidbody _cachedRb;
     private GameObject _selectionIndicator;
@@ -55,6 +60,36 @@ public class ARSessionController : MonoBehaviour
     private bool _isMovingBackward;
     private bool _isMovingLeft;
     private bool _isMovingRight;
+
+    private void ToggleOcclusion()
+    {
+        if (_occlusionManager == null) return;
+
+        bool isCurrentlyEnabled = _occlusionManager.requestedEnvironmentDepthMode != UnityEngine.XR.ARSubsystems.EnvironmentDepthMode.Disabled;
+
+        if (isCurrentlyEnabled)
+        {
+            _occlusionManager.requestedEnvironmentDepthMode = UnityEngine.XR.ARSubsystems.EnvironmentDepthMode.Disabled;
+        }
+        else
+        {
+            _occlusionManager.requestedEnvironmentDepthMode = UnityEngine.XR.ARSubsystems.EnvironmentDepthMode.Fastest;
+        }
+
+        UpdateOcclusionUI();
+    }
+    private void UpdateOcclusionUI()
+    {
+        if (_occlusionManager == null || btnToggleOcclusion == null) return;
+
+        bool isEnabled = _occlusionManager.requestedEnvironmentDepthMode != UnityEngine.XR.ARSubsystems.EnvironmentDepthMode.Disabled;
+
+        Image bgImage = btnToggleOcclusion.GetComponent<Image>();
+        if (bgImage != null)
+        {
+            bgImage.color = isEnabled ? new Color(1f, 0.8f, 0f, 1f) : new Color(1f, 1f, 1f, 0.4f);
+        }
+    }
 
     private void OnBackClick()
     {
@@ -253,6 +288,14 @@ public class ARSessionController : MonoBehaviour
             flashOverlay.SetActive(false);
 
         CreateSelectionIndicator();
+
+        _occlusionManager = FindFirstObjectByType<AROcclusionManager>();
+
+        if (btnToggleOcclusion != null)
+        {
+            btnToggleOcclusion.onClick.AddListener(ToggleOcclusion);
+        }
+        UpdateOcclusionUI();
     }
 
     private void OnDestroy()
