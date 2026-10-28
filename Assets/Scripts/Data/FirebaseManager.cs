@@ -313,8 +313,27 @@ public class FirebaseManager : MonoBehaviour
             foreach (var doc in snapshot.Documents)
             {
                 var item = new FurnitureItem { id = doc.Id };
+
                 try { item.name = doc.GetValue<string>("name"); } catch { item.name = "Tanpa Nama"; }
                 try { item.category = doc.GetValue<string>("category"); } catch { item.category = "Lainnya"; }
+                try
+                {
+                    string rawPlacementType = doc.GetValue<string>("placementType");
+
+                    if (!System.Enum.TryParse(
+                        rawPlacementType,
+                        true,
+                        out PlacementType parsedPlacementType))
+                    {
+                        parsedPlacementType = PlacementType.Floor;
+                    }
+
+                    item.placementType = parsedPlacementType;
+                }
+                catch
+                {
+                    item.placementType = PlacementType.Floor;
+                }
                 try { item.description = doc.GetValue<string>("description"); } catch { item.description = ""; }
                 try { item.width = doc.GetValue<float>("width"); } catch { item.width = 0f; }
                 try { item.depth = doc.GetValue<float>("depth"); } catch { item.depth = 0f; }

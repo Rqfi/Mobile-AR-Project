@@ -44,9 +44,12 @@ public class ARSessionController : MonoBehaviour
 
     [Header("Testing & Debug UI")]
     [SerializeField] private Button btnToggleOcclusion;
+    [SerializeField] private Button btnToggleControlPanel;
     [SerializeField] private Text txtOcclusionStatus;
+    [SerializeField] private Text txtDistanceMonitor;
+    private ARRaycastManager _raycastManager;
     private AROcclusionManager _occlusionManager;
-
+    private bool _isControlPanelVisible = true;
     private GameObject _currentSelectedObject;
     private Rigidbody _cachedRb;
     private GameObject _selectionIndicator;
@@ -88,6 +91,28 @@ public class ARSessionController : MonoBehaviour
         if (bgImage != null)
         {
             bgImage.color = isEnabled ? new Color(1f, 0.8f, 0f, 1f) : new Color(1f, 1f, 1f, 0.4f);
+        }
+    }
+
+    private void ToggleControlPanel()
+    {
+        _isControlPanelVisible = !_isControlPanelVisible;
+        if (_currentSelectedObject != null && interactionPanel != null)
+        {
+            interactionPanel.SetActive(_isControlPanelVisible);
+        }
+
+        UpdateControlPanelUI();
+    }
+
+    private void UpdateControlPanelUI()
+    {
+        if (btnToggleControlPanel == null) return;
+
+        Image bgImage = btnToggleControlPanel.GetComponent<Image>();
+        if (bgImage != null)
+        {
+            bgImage.color = _isControlPanelVisible ? new Color(1f, 0.8f, 0f, 1f) : new Color(1f, 1f, 1f, 0.4f);
         }
     }
 
@@ -296,6 +321,14 @@ public class ARSessionController : MonoBehaviour
             btnToggleOcclusion.onClick.AddListener(ToggleOcclusion);
         }
         UpdateOcclusionUI();
+
+        if (btnToggleControlPanel != null)
+        {
+            btnToggleControlPanel.onClick.AddListener(ToggleControlPanel);
+        }
+        UpdateControlPanelUI();
+
+        _raycastManager = FindFirstObjectByType<ARRaycastManager>();
     }
 
     private void OnDestroy()
@@ -608,6 +641,8 @@ public class ARSessionController : MonoBehaviour
 
     private void Update()
     {
+        UpdateDistanceMeasurement();
+
         // 1. Deteksi sentuhan menggunakan New Input System
         if (Pointer.current != null && Pointer.current.press.wasPressedThisFrame)
         {
@@ -643,26 +678,33 @@ public class ARSessionController : MonoBehaviour
                     {
                         _currentSelectedObject = target.gameObject;
                         if (interactionPanel != null)
-                            interactionPanel.SetActive(true);
+                            interactionPanel.SetActive(_isControlPanelVisible);
+
+                        if (_objectSpawner != null)
+                            _objectSpawner.enabled = false;
 
                         Debug.Log($"[ARSession] Objek terpilih: {_currentSelectedObject.name}");
                     }
                     else
                     {
-                        // Jika klik di luar furnitur (misal: di lantai AR Plane), hilangkan seleksi
                         _currentSelectedObject = null;
                         if (interactionPanel != null)
                             interactionPanel.SetActive(false);
+
+                        if (_objectSpawner != null)
+                            _objectSpawner.enabled = true;
 
                         Debug.Log("[ARSession] Raycast MISS - Klik pada lantai/AR Plane");
                     }
                 }
                 else
                 {
-                    // Tidak kena apa-apa
                     _currentSelectedObject = null;
                     if (interactionPanel != null)
                         interactionPanel.SetActive(false);
+
+                    if (_objectSpawner != null)
+                        _objectSpawner.enabled = true;
 
                     Debug.Log("[ARSession] Raycast MISS - tidak mengenai collider apapun");
                 }
@@ -682,6 +724,79 @@ public class ARSessionController : MonoBehaviour
             if (interactionPanel != null && interactionPanel.activeSelf)
                 interactionPanel.SetActive(false);
             return;
+        }
+
+        var activeTouches = UnityEngine.InputSystem.EnhancedTouch.Touch.activeTouches;
+
+        if (activeTouches.Count == 1)
+        {
+            var touch = activeTouches[0];
+            if (touch.phase == UnityEngine.InputSystem.TouchPhase.Moved)
+            {
+                Vector2 delta = touch.delta;
+                Vector3 touchMoveDir = Vector3.zero;
+                bool isTouchOnWall = _objectOnWallMap.ContainsKey(_currentSelectedObject) && _objectOnWallMap[_currentSelectedObject];
+
+                if (isTouchOnWall)
+                {
+                    Vector3 wallUp = Vector3.up;
+                    Vector3 wallNormal = _objectWallNormalMap.ContainsKey(_currentSelectedObject) ? _objectWallNormalMap[_currentSelectedObject] : _currentSelectedObject.transform.forward;
+                    Vector3 wallRight = Vector3.Cross(wallNormal, wallUp).normalized;
+                    touchMoveDir = (wallRight * delta.x) + (wallUp * delta.y);
+                }
+                else
+                {
+                    Vector3 camFwd = Camera.main.transform.forward;
+                    camFwd.y = 0f; camFwd.Normalize();
+                    Vector3 camRight = Camera.main.transform.right;
+                    camRight.y = 0f; camRight.Normalize();
+                    touchMoveDir = (camRight * delta.x) + (camFwd * delta.y);
+                }
+
+                float touchMoveSpeed = 0.002f;
+                if (_cachedRb == null || _cachedRb.gameObject != _currentSelectedObject)
+                    _cachedRb = _currentSelectedObject.GetComponent<Rigidbody>();
+
+                if (_cachedRb != null)
+                    _cachedRb.MovePosition(_currentSelectedObject.transform.position + (touchMoveDir * touchMoveSpeed));
+                else
+                    _currentSelectedObject.transform.position += (touchMoveDir * touchMoveSpeed);
+            }
+        }
+        else if (activeTouches.Count == 2)
+        {
+            var touch1 = activeTouches[0];
+            var touch2 = activeTouches[1];
+
+            if (touch1.phase == UnityEngine.InputSystem.TouchPhase.Moved || touch2.phase == UnityEngine.InputSystem.TouchPhase.Moved)
+            {
+                Vector2 prevPos1 = touch1.screenPosition - touch1.delta;
+                Vector2 prevPos2 = touch2.screenPosition - touch2.delta;
+
+                float prevAngle = Mathf.Atan2(prevPos2.y - prevPos1.y, prevPos2.x - prevPos1.x) * Mathf.Rad2Deg;
+                float currentAngle = Mathf.Atan2(touch2.screenPosition.y - touch1.screenPosition.y, touch2.screenPosition.x - touch1.screenPosition.x) * Mathf.Rad2Deg;
+                float deltaAngle = Mathf.DeltaAngle(prevAngle, currentAngle);
+
+                Vector3 axis = Vector3.up;
+                if (_objectOnWallMap.TryGetValue(_currentSelectedObject, out bool onWall) && onWall)
+                {
+                    if (_objectWallNormalMap.TryGetValue(_currentSelectedObject, out Vector3 wallNormal))
+                        axis = wallNormal;
+                }
+
+                if (_cachedRb == null || _cachedRb.gameObject != _currentSelectedObject)
+                    _cachedRb = _currentSelectedObject.GetComponent<Rigidbody>();
+
+                if (_cachedRb != null)
+                {
+                    Quaternion rot = Quaternion.AngleAxis(-deltaAngle, axis);
+                    _cachedRb.MoveRotation(rot * _cachedRb.rotation);
+                }
+                else
+                {
+                    _currentSelectedObject.transform.Rotate(axis, -deltaAngle, Space.World);
+                }
+            }
         }
 
         // 2. Tangani Geser Objek (Move) Berdasarkan Permukaan
@@ -763,6 +878,27 @@ public class ARSessionController : MonoBehaviour
         }
     }
 
+    private static readonly System.Collections.Generic.List<ARRaycastHit> _distanceHits = new System.Collections.Generic.List<ARRaycastHit>();
+
+    private void UpdateDistanceMeasurement()
+    {
+        if (txtDistanceMonitor == null || _raycastManager == null || Camera.main == null) return;
+
+        Vector2 screenCenter = new Vector2(Screen.width / 2f, Screen.height / 2f);
+
+        if (_raycastManager.Raycast(screenCenter, _distanceHits, UnityEngine.XR.ARSubsystems.TrackableType.PlaneWithinPolygon | UnityEngine.XR.ARSubsystems.TrackableType.FeaturePoint))
+        {
+            Pose hitPose = _distanceHits[0].pose;
+            float distanceMeters = Vector3.Distance(Camera.main.transform.position, hitPose.position);
+            float distanceCm = distanceMeters * 100f;
+            txtDistanceMonitor.text = $"Jarak: {distanceCm:F1} cm";
+        }
+        else
+        {
+            txtDistanceMonitor.text = "Jarak: -- cm";
+        }
+    }
+
     private GameObject _loadingTextGo;
 
     private void ShowARLoadingStatus(string message)
@@ -776,7 +912,7 @@ public class ARSessionController : MonoBehaviour
             _loadingTextGo.transform.SetParent(canvas.transform, false);
 
             var rect = _loadingTextGo.AddComponent<RectTransform>();
-            rect.anchoredPosition = new Vector2(0f, 150f); // Diposisikan di atas Bottom Bar
+            rect.anchoredPosition = new Vector2(0f, 150f);
             rect.sizeDelta = new Vector2(500f, 60f);
 
             var text = _loadingTextGo.AddComponent<UnityEngine.UI.Text>();
