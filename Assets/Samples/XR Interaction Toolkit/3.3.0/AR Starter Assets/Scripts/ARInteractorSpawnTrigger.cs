@@ -172,6 +172,9 @@ namespace UnityEngine.XR.Interaction.Toolkit.Samples.ARStarterAssets
                     if (m_RequireHorizontalUpSurface && arPlane.alignment != PlaneAlignment.HorizontalUp)
                         return;
 
+                    var sessionController = FindFirstObjectByType<ARSessionController>();
+                    sessionController?.SetPendingSpawnPlane(arPlane);
+
                     m_ObjectSpawnTriggered.Invoke(arRaycastHit.pose.position, arPlane.normal);
                 }
 

@@ -342,6 +342,15 @@ public class ARSessionController : MonoBehaviour
     // Variabel baru untuk membedakan objek di dinding vs lantai
     private System.Collections.Generic.Dictionary<GameObject, bool> _objectOnWallMap = new System.Collections.Generic.Dictionary<GameObject, bool>();
     private System.Collections.Generic.Dictionary<GameObject, Vector3> _objectWallNormalMap = new System.Collections.Generic.Dictionary<GameObject, Vector3>();
+    private System.Collections.Generic.Dictionary<GameObject, PlacementType> _objectPlacementTypeMap =
+    new System.Collections.Generic.Dictionary<GameObject, PlacementType>();
+
+    private ARPlane _pendingSpawnPlane;
+
+    public void SetPendingSpawnPlane(ARPlane plane)
+    {
+        _pendingSpawnPlane = plane;
+    }
 
     private void OnObjectSpawned(GameObject spawnedObject)
     {
@@ -350,23 +359,6 @@ public class ARSessionController : MonoBehaviour
         // Tampilkan panel kontrol
         if (interactionPanel != null)
             interactionPanel.SetActive(true);
-
-        bool isOnWall = Vector3.Angle(spawnedObject.transform.up, Vector3.up) > 45f;
-        _objectOnWallMap[spawnedObject] = isOnWall;
-
-        if (isOnWall)
-        {
-            Vector3 wallNormal = spawnedObject.transform.up;
-            _objectWallNormalMap[spawnedObject] = wallNormal;
-            spawnedObject.transform.rotation = Quaternion.LookRotation(wallNormal, Vector3.up);
-        }
-        else
-        {
-            Vector3 forward = spawnedObject.transform.forward;
-            forward.y = 0;
-            if (forward != Vector3.zero)
-                spawnedObject.transform.rotation = Quaternion.LookRotation(forward, Vector3.up);
-        }
 
         string selectedId = AppState.SelectedFurnitureId;
         if (string.IsNullOrEmpty(selectedId))
@@ -382,7 +374,71 @@ public class ARSessionController : MonoBehaviour
             return;
         }
 
+        ARPlane spawnPlane = _pendingSpawnPlane;
+        _pendingSpawnPlane = null;
+
+        if (spawnPlane == null ||
+            !IsPlacementAllowed(item.placementType, spawnPlane.alignment))
+        {
+            string surfaceName = spawnPlane == null
+                ? "permukaan tidak diketahui"
+                : spawnPlane.alignment.ToString();
+
+            Debug.LogWarning(
+                $"[ARSession] {item.name} ({item.placementType}) tidak dapat ditempatkan pada {surfaceName}.");
+
+            _objectOnWallMap.Remove(spawnedObject);
+            _objectWallNormalMap.Remove(spawnedObject);
+
+            if (_currentSelectedObject == spawnedObject)
+                _currentSelectedObject = null;
+
+            if (interactionPanel != null)
+                interactionPanel.SetActive(false);
+
+            Destroy(spawnedObject);
+            return;
+        }
+
+        bool isOnWallFromPlane = spawnPlane.alignment == UnityEngine.XR.ARSubsystems.PlaneAlignment.Vertical;
+
+        _objectOnWallMap[spawnedObject] = isOnWallFromPlane;
+
+        if (isOnWallFromPlane)
+        {
+            Vector3 wallNormal = spawnPlane.normal.normalized;
+            Vector3 toCamera = Camera.main.transform.position - spawnedObject.transform.position;
+
+            if (Vector3.Dot(wallNormal, toCamera) < 0f)
+                wallNormal = -wallNormal;
+
+            _objectWallNormalMap[spawnedObject] = wallNormal;
+            spawnedObject.transform.rotation = Quaternion.LookRotation(wallNormal, Vector3.up);
+        }
+
+        _objectPlacementTypeMap[spawnedObject] = item.placementType;
+
         LoadGLBModelInAR(spawnedObject, item);
+    }
+
+    private bool IsPlacementAllowed(
+    PlacementType placementType,
+    UnityEngine.XR.ARSubsystems.PlaneAlignment alignment)
+    {
+        return placementType switch
+        {
+            PlacementType.Floor =>
+                alignment == UnityEngine.XR.ARSubsystems.PlaneAlignment.HorizontalUp,
+
+            PlacementType.Wall =>
+                alignment == UnityEngine.XR.ARSubsystems.PlaneAlignment.Vertical,
+
+            PlacementType.FloorOrWall =>
+                alignment == UnityEngine.XR.ARSubsystems.PlaneAlignment.HorizontalUp ||
+                alignment == UnityEngine.XR.ARSubsystems.PlaneAlignment.Vertical,
+
+            _ => false
+        };
     }
 
     private async void LoadGLBModelInAR(GameObject spawnedObject, FurnitureItem item)
@@ -432,6 +488,7 @@ public class ARSessionController : MonoBehaviour
 
                 // Buat BoxCollider dinamis berdasarkan ukuran model asli untuk interaktivitas
                 AddBoxColliderToModel(spawnedObject, glbContainer);
+                SnapWallObjectToSurface(spawnedObject);
 
                 // Matikan animator bawaan model jika ada
                 var animator = glbContainer.GetComponentInChildren<Animator>();
@@ -940,6 +997,28 @@ public class ARSessionController : MonoBehaviour
         {
             _loadingTextGo.SetActive(false);
         }
+    }
+
+    private void SnapWallObjectToSurface(GameObject spawnedObject)
+    {
+        if (!_objectOnWallMap.TryGetValue(spawnedObject, out bool isOnWall) ||
+            !isOnWall)
+            return;
+
+        if (!_objectWallNormalMap.TryGetValue(spawnedObject, out Vector3 wallNormal))
+            return;
+
+        BoxCollider box = spawnedObject.GetComponent<BoxCollider>();
+        if (box == null)
+            return;
+
+        const float wallClearance = 0.01f; // 1 cm di depan dinding
+
+        // Dalam koordinat lokal root, sisi belakang model berada pada -Z.
+        float backFaceZ = box.center.z - (box.size.z * 0.5f);
+        float offset = wallClearance - backFaceZ;
+
+        spawnedObject.transform.position += wallNormal * offset;
     }
 
     private void AddBoxColliderToModel(GameObject spawnedObject, GameObject glbContainer)
