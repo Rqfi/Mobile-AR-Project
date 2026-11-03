@@ -20,6 +20,7 @@ function AdminPage({ db, handleLogout, showToast }) {
     const [depth, setDepth] = useState('');
     const [height, setHeight] = useState('');
     const [scale, setScale] = useState(1.0);
+    const [placementType, setPlacementType] = useState('Floor');
 
     const [uploadMode, setUploadMode] = useState('link');
     const [thumbnailUrl, setThumbnailUrl] = useState('');
@@ -65,6 +66,7 @@ function AdminPage({ db, handleLogout, showToast }) {
         setDepth(item.depth || '');
         setHeight(item.height || '');
         setScale(item.scale || 1.0);
+        setPlacementType(item.placementType || 'Floor');
         setThumbnailUrl(item.thumbnailUrl || '');
         setModelUrl(item.modelUrl || '');
         setIsModalOpen(true);
@@ -79,6 +81,7 @@ function AdminPage({ db, handleLogout, showToast }) {
         setDepth('');
         setHeight('');
         setScale(1.0);
+        setPlacementType('Floor');
         setThumbnailUrl('');
         setModelUrl('');
         setThumbnailFile(null);
@@ -113,6 +116,7 @@ function AdminPage({ db, handleLogout, showToast }) {
                 depth: Number(depth),
                 height: Number(height),
                 scale: Number(scale),
+                placementType,
                 thumbnailUrl: finalThumbnailUrl,
                 modelUrl: finalModelUrl,
                 updatedAt: new Date().toISOString()
@@ -283,6 +287,20 @@ function AdminPage({ db, handleLogout, showToast }) {
                                         <option value="Lemari">Lemari</option>
                                         <option value="Kasur">Kasur</option>
                                         <option value="Lainnya">Lainnya</option>
+                                    </select>
+                                </div>
+                                <div className="form-group">
+                                    <label>Jenis Penempatan AR</label>
+                                    <select
+                                        className="form-control"
+                                        value={placementType}
+                                        onChange={(e) => setPlacementType(e.target.value)}
+                                        required
+                                    >
+                                        <option value="Floor">Lantai</option>
+                                        <option value="Wall">Dinding</option>
+                                        <option value="Tabletop">Atas meja</option>
+                                        <option value="FloorOrWall">Lantai atau dinding</option>
                                     </select>
                                 </div>
                                 <div className="form-group">
