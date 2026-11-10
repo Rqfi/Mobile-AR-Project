@@ -7,6 +7,7 @@ using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using TMPro;
 using UnityEngine.XR.Interaction.Toolkit.Samples.StarterAssets;
+using UnityEngine.XR.Interaction.Toolkit.Samples.ARStarterAssets;
 using GLTFast;
 using UnityEngine.InputSystem;
 using UnityEngine.Rendering.Universal;
@@ -248,6 +249,7 @@ public class ARSessionController : MonoBehaviour
     }
 
     private ObjectSpawner _objectSpawner;
+    private ARInteractorSpawnTrigger _spawnTrigger;
 
     private bool _isCatalogOpen = false;
 
@@ -281,6 +283,12 @@ public class ARSessionController : MonoBehaviour
         if (_objectSpawner != null)
         {
             _objectSpawner.objectSpawned += OnObjectSpawned;
+        }
+
+        _spawnTrigger = FindFirstObjectByType<ARInteractorSpawnTrigger>();
+        if (_spawnTrigger != null)
+        {
+            _spawnTrigger.planeSpawnTriggered += SetPendingSpawnPlane;
         }
 
         // FIX: Paksa ARPlaneManager untuk mendeteksi dinding vertikal (berjaga-jaga jika ter-reset)
@@ -337,6 +345,11 @@ public class ARSessionController : MonoBehaviour
         {
             _objectSpawner.objectSpawned -= OnObjectSpawned;
         }
+
+        if (_spawnTrigger != null)
+        {
+            _spawnTrigger.planeSpawnTriggered -= SetPendingSpawnPlane;
+        }
     }
 
     // Variabel baru untuk membedakan objek di dinding vs lantai
@@ -350,6 +363,7 @@ public class ARSessionController : MonoBehaviour
     public void SetPendingSpawnPlane(ARPlane plane)
     {
         _pendingSpawnPlane = plane;
+        Debug.Log($"[ARSession] Spawn plane diterima: {plane.alignment}");
     }
 
     private void OnObjectSpawned(GameObject spawnedObject)
@@ -422,19 +436,15 @@ public class ARSessionController : MonoBehaviour
     }
 
     private bool IsPlacementAllowed(
-    PlacementType placementType,
-    UnityEngine.XR.ARSubsystems.PlaneAlignment alignment)
+        PlacementType placementType,
+        UnityEngine.XR.ARSubsystems.PlaneAlignment alignment)
     {
         return placementType switch
         {
-            PlacementType.Floor =>
+            PlacementType.Flat =>
                 alignment == UnityEngine.XR.ARSubsystems.PlaneAlignment.HorizontalUp,
 
             PlacementType.Wall =>
-                alignment == UnityEngine.XR.ARSubsystems.PlaneAlignment.Vertical,
-
-            PlacementType.FloorOrWall =>
-                alignment == UnityEngine.XR.ARSubsystems.PlaneAlignment.HorizontalUp ||
                 alignment == UnityEngine.XR.ARSubsystems.PlaneAlignment.Vertical,
 
             _ => false
@@ -1054,11 +1064,7 @@ public class ARSessionController : MonoBehaviour
             var rb = spawnedObject.GetComponent<Rigidbody>();
             if (rb == null) rb = spawnedObject.AddComponent<Rigidbody>();
             rb.useGravity = false;
-            rb.isKinematic = false;
-            rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
-            rb.linearDamping = 10f;
-            rb.angularDamping = 10f;
-            rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationY | RigidbodyConstraints.FreezeRotationZ;
+            rb.isKinematic = true;
         }
 
         spawnedObject.transform.rotation = originalRot;

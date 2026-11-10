@@ -11,12 +11,10 @@ public class FurnitureItem
     public float scale;
     public string thumbnailUrl;
     public string modelUrl;
-    public PlacementType placementType = PlacementType.Floor;
+    public PlacementType placementType = PlacementType.Flat;
 }
 public enum PlacementType
 {
-    Floor,
     Wall,
-    Tabletop,
-    FloorOrWall
+    Flat
 }

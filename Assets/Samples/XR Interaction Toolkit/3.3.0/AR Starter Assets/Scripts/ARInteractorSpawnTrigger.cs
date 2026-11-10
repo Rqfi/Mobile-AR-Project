@@ -1,4 +1,5 @@
 #if AR_FOUNDATION_PRESENT
+using System;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
 using UnityEngine.XR.ARFoundation;
@@ -114,6 +115,8 @@ namespace UnityEngine.XR.Interaction.Toolkit.Samples.ARStarterAssets
         [Tooltip("Calls the methods in its invocation list when an object is spawned.")]
         UnityEvent<Vector3, Vector3> m_ObjectSpawnTriggered = new UnityEvent<Vector3, Vector3>();
 
+        public event Action<ARPlane> planeSpawnTriggered;
+
         bool m_AttemptSpawn;
         bool m_EverHadSelection;
 
@@ -172,8 +175,7 @@ namespace UnityEngine.XR.Interaction.Toolkit.Samples.ARStarterAssets
                     if (m_RequireHorizontalUpSurface && arPlane.alignment != PlaneAlignment.HorizontalUp)
                         return;
 
-                    var sessionController = FindFirstObjectByType<ARSessionController>();
-                    sessionController?.SetPendingSpawnPlane(arPlane);
+                    planeSpawnTriggered?.Invoke(arPlane);
 
                     m_ObjectSpawnTriggered.Invoke(arRaycastHit.pose.position, arPlane.normal);
                 }

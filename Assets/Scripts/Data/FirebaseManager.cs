@@ -320,19 +320,13 @@ public class FirebaseManager : MonoBehaviour
                 {
                     string rawPlacementType = doc.GetValue<string>("placementType");
 
-                    if (!System.Enum.TryParse(
-                        rawPlacementType,
-                        true,
-                        out PlacementType parsedPlacementType))
-                    {
-                        parsedPlacementType = PlacementType.Floor;
-                    }
-
-                    item.placementType = parsedPlacementType;
+                    item.placementType = rawPlacementType == "Wall"
+                        ? PlacementType.Wall
+                        : PlacementType.Flat;
                 }
                 catch
                 {
-                    item.placementType = PlacementType.Floor;
+                    item.placementType = PlacementType.Flat;
                 }
                 try { item.description = doc.GetValue<string>("description"); } catch { item.description = ""; }
                 try { item.width = doc.GetValue<float>("width"); } catch { item.width = 0f; }
