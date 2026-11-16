@@ -20,7 +20,7 @@ function AdminPage({ db, handleLogout, showToast }) {
     const [depth, setDepth] = useState('');
     const [height, setHeight] = useState('');
     const [scale, setScale] = useState(1.0);
-    const [placementType, setPlacementType] = useState('Floor');
+    const [placementType, setPlacementType] = useState('Flat');
 
     const [uploadMode, setUploadMode] = useState('link');
     const [thumbnailUrl, setThumbnailUrl] = useState('');
@@ -39,6 +39,15 @@ function AdminPage({ db, handleLogout, showToast }) {
         });
 
         const data = await response.json();
+
+        if (!response.ok || data.error) {
+            throw new Error(`Upload Cloudinary gagal: ${data.error?.message || response.statusText}`);
+        }
+
+        if (!data.secure_url) {
+            throw new Error("Cloudinary tidak mengembalikan URL file yang valid.");
+        }
+
         return data.secure_url;
     };
 
@@ -66,7 +75,7 @@ function AdminPage({ db, handleLogout, showToast }) {
         setDepth(item.depth || '');
         setHeight(item.height || '');
         setScale(item.scale || 1.0);
-        setPlacementType(item.placementType || 'Floor');
+        setPlacementType(item.placementType || 'Flat');
         setThumbnailUrl(item.thumbnailUrl || '');
         setModelUrl(item.modelUrl || '');
         setIsModalOpen(true);
@@ -81,7 +90,7 @@ function AdminPage({ db, handleLogout, showToast }) {
         setDepth('');
         setHeight('');
         setScale(1.0);
-        setPlacementType('Floor');
+        setPlacementType('Flat');
         setThumbnailUrl('');
         setModelUrl('');
         setThumbnailFile(null);
@@ -117,8 +126,8 @@ function AdminPage({ db, handleLogout, showToast }) {
                 height: Number(height),
                 scale: Number(scale),
                 placementType,
-                thumbnailUrl: finalThumbnailUrl,
-                modelUrl: finalModelUrl,
+                thumbnailUrl: finalThumbnailUrl || '',
+                modelUrl: finalModelUrl || '',
                 updatedAt: new Date().toISOString()
             };
 
@@ -297,10 +306,8 @@ function AdminPage({ db, handleLogout, showToast }) {
                                         onChange={(e) => setPlacementType(e.target.value)}
                                         required
                                     >
-                                        <option value="Floor">Lantai</option>
+                                        <option value="Flat">Lantai</option>
                                         <option value="Wall">Dinding</option>
-                                        <option value="Tabletop">Atas meja</option>
-                                        <option value="FloorOrWall">Lantai atau dinding</option>
                                     </select>
                                 </div>
                                 <div className="form-group">
