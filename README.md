@@ -53,7 +53,7 @@ Branch `items` berfungsi sebagai staging area untuk menyimpan aset 3D furnitur s
 ### 6. Material & Tekstur
 
 - [Masih dalam penyesuaian]
-- Struktur shading yang berhasil diterapkan untuk saat ini.
+- Struktur shading yang berhasil diterapkan untuk saat ini. (for image texture base only)
 
   <img src="image/texture-nodes.png" alt="Struktur shading yang berhasil diterapkan di Blender" width="500">
 
